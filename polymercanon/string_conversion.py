@@ -1954,9 +1954,18 @@ def _to_bigsmiles(tree, states_to_eliminate, new_start_state, new_end_state, old
         # Generate list of the other repeating units
         repeat_units = generate_list_of_rus(transitions_to_convert)
 
-        # Create BigSMILES
-        bigsmiles = "{[]" + ",".join(repeat_units) + f"[>{start_transition.output}]" + \
-                    "}" + f"{start_transition.smiles.replace('[*:1]', '')}"
+        # # Create BigSMILES
+        # bigsmiles = "{[]" + ",".join(repeat_units) + f"[>{start_transition.output}]" + \
+        #             "}" + f"{start_transition.smiles.replace('[*:1]', '')}"
+
+        # Create BigSMILES TODO did this today
+        # If the starting transition is only an empty transition, do not add the end group
+        if start_transition.smiles in tree_automata.FORMS_OF_STARTING_EMPTY_ALPHABET:
+            bigsmiles = "{[]" + ",".join(repeat_units) + "[]}"
+        # Otherwise, add an end group
+        else:
+            bigsmiles = "{[]" + ",".join(repeat_units) + f"[>{start_transition.output}]" + \
+                        "}" + f"{start_transition.smiles.replace('[*:1]', '')}"
 
     # If there are cycles (i.e. repeat units), list transitions are repeat units, and list end groups after ;.
     elif if_has_cycles:
