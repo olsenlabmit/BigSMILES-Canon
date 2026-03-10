@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import time
 import copy
@@ -296,6 +298,7 @@ def remove_graph_duplicates(graph_list, filter=lambda a, b: a == b):
             seen.add(item)
             result.append(item)
     return result
+
 def generate_all_possible_graphs(input_string):
     """
     This function generates all possible graphs (atomistic and topology), given a BigSMILES string
@@ -322,6 +325,9 @@ def generate_all_possible_graphs(input_string):
 
     _list = []
     for atomistic in atomistic_list:
+        # Skip if number of edges is less than 2
+        if len(atomistic.edges) < 2:
+            continue
         # Fix atomistic graph
         _list += fix_atomistic_graph_indices(atomistic)
     atomistic_list = _list

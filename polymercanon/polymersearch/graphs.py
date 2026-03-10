@@ -415,7 +415,6 @@ def build_atomistic(bigsmiles, is_bigsmarts):
                        was_implicit=[],
                        level=0), no_other_objects
 
-
 def build_all_atomistic_graphs(bigsmiles):
     """
     This function generates all possible atomistic graphs from a bigsmiles string
@@ -581,7 +580,7 @@ def build_all_atomistic_graphs(bigsmiles):
             if "bond_direction" not in graph.edges[edge].keys():
                 graph.edges[edge]["bond_direction"] = list(edge)
 
-
+        # Add to list of graphs
         list_of_graphs.append(graph)
 
     return list_of_graphs
@@ -628,7 +627,345 @@ def swap_end_bonding_descriptor(stochastic_object):
 
     return stochastic_object
 
-def add_Es_in_branches(atomistic): # TODO did this today
+
+def build_level_nathan(atomistic, is_bigsmarts, object_list, object_orientation, was_implicit, level):
+    symbols = nx.get_node_attributes(atomistic, "symbol")
+    index_Bk = []
+    for key in symbols:
+        if symbols[key] in ["[#97]", "[Bk]", "Bk"]:
+            neighbors = list(atomistic[key])
+            if len(neighbors) == 2:
+                index_Bk.append(key)
+
+    endgroup_atom_ids = []
+    for key in symbols:
+        if symbols[key] not in ["Bk", "Es"]:
+            endgroup_atom_ids.append(key)
+    terminals_indices = []
+
+    # keep track of "1" single path endgroups for duplication
+    one_single = []
+
+    # iterate through each Bk in NetworkX graph, which contains the saved stochastic object strings
+    nested_objects = []
+    was_implicit_now = []
+    nested_orientation = []
+    for o in range(len(object_list)):
+        # Parse repeat units, implicit endgroups, and terminal descriptors from each stochastic object string
+        repeats, implicit_ends = get_repeats(object_list[o])
+        if "[>1][Fm][Md][<1]" in repeats:
+            wildcard_cluster = True
+        else:
+            wildcard_cluster = False
+
+        stochastic_descriptor = []
+
+        left_terminal = object_list[o][1:object_list[o].find("]") + 1]
+        right_terminal = object_list[o][object_list[o].rfind("["):-1]
+        single_path = single_path_chemistries(repeats)
+        one_single.append(single_path["1"])
+
+        # Connect terminal descriptors to Bk's neighbors.
+        neighbors = list(atomistic[index_Bk[o]])
+        for n in neighbors:
+            atomistic.remove_edge(index_Bk[o], n)
+
+        terminals = [[left_terminal, get_comp(right_terminal)], [get_comp(left_terminal), right_terminal]]
+        if len(single_path["2"]) == 1:
+            value = single_path["2"][0]
+            if value == get_comp(left_terminal):
+                atomistic, terminals_attachment, l_index, r_index = insert_terminals(atomistic, terminals, neighbors,
+                                                                                     "1")
+            elif value == get_comp(right_terminal):
+                atomistic, terminals_attachment, l_index, r_index = insert_terminals(atomistic, terminals, neighbors,
+                                                                                     "2")
+        elif len(single_path["2"]) > 1:
+            for value in single_path["2"]:
+                if object_orientation[o] == "1":
+                    if value == get_comp(left_terminal):
+                        atomistic, terminals_attachment, l_index, r_index = insert_terminals(atomistic, terminals,
+                                                                                             neighbors, "1")
+                        single_path["2"] = [value]
+                        break
+                else:
+                    if value == get_comp(right_terminal):
+                        atomistic, terminals_attachment, l_index, r_index = insert_terminals(atomistic, terminals,
+                                                                                             neighbors, "2")
+                        single_path["2"] = [value]
+                        break
+        else:
+            atomistic, terminals_attachment, l_index, r_index = insert_terminals(atomistic, terminals, neighbors,
+                                                                                 object_orientation[o])
+        terminals_indices.append([l_index, r_index])
+
+        if len(implicit_ends) > 0:
+            symbols = nx.get_node_attributes(atomistic, "symbol")
+            for i in range(2):
+                n = list(atomistic[neighbors[i]])
+                expl_a = symbols[neighbors[i]] not in ["[#99]", "[Es]", "Es"]
+                expl_b = symbols[neighbors[i]] in ["[#99]", "[Es]", "Es"] and len(list(atomistic[neighbors[i]])) >= 2
+                if not (expl_a or expl_b):
+                    terminals_attachment[i] = ["1", "2"]
+            if left_terminal == get_comp(right_terminal):
+                a = list(set(terminals_attachment[0]) & set(terminals_attachment[1]))
+                terminals_attachment = [a, a]
+
+        # Iterate through reach parsed repeat unit and implicit endgroup
+        ru_local_el = set()
+        for smiles in repeats:
+            # Replace nested objects with Bk, descriptors with Cf, and save nested object string.
+            smiles, nested_object_list = sub_obj_with_Bk(smiles)
+
+            descriptor_locations = [(d.start(0), d.end(0)) for d in re.finditer(desc_regex, smiles)]
+            descriptors = []
+            for d in descriptor_locations:
+                descriptors.append(smiles[d[0]:d[1]])
+            for d in descriptors:
+                smiles = smiles.replace(d, "[Cf]")
+            smiles = single_atom_cycle(descriptors, smiles)
+
+            duplication = len(descriptors)
+            for n in range(len(descriptors)):
+                if descriptors[n] in single_path["1"]:
+                    duplication -= 1
+                if get_comp(descriptors[n]) in single_path["2"]:
+                    duplication -= 1
+
+            if "[Bk]" in smiles:
+                smiles, nested_object_list = modify_string(smiles, nested_object_list)
+                for d in range(duplication):
+                    for n in nested_object_list:
+                        nested_objects.append(n)
+                        was_implicit_now.append(False)
+
+            ## store stochastic elements
+            if duplication == 0:
+                ru_local_el.add(smiles)
+                continue
+
+            # Convert SMARTS or SMILES into RDKit molecular graph and NetworkX graph
+            if is_bigsmarts:
+                rdkit_graph = Chem.MolFromSmiles(smiles)
+            else:
+                rdkit_graph = Chem.MolFromSmiles(smiles)
+
+            if level > 0 and was_implicit[o]:
+                networkx_graph = RDKit_to_networkx_graph(mol=rdkit_graph, is_bigsmarts=is_bigsmarts, level=level - 1)
+            else:
+                networkx_graph = RDKit_to_networkx_graph(mol=rdkit_graph, is_bigsmarts=is_bigsmarts, level=level)
+
+            for d in range(duplication):
+                atomistic = nx.disjoint_union(atomistic, networkx_graph)
+
+            symbols = nx.get_node_attributes(atomistic, "symbol")
+            neighbors = []
+            for key in symbols:
+                if symbols[key] in ["[#98]", "[Cf]", "Cf"]:
+                    n = list(atomistic[key])
+                    if len(n) == 1:
+                        neighbors.append(n[0])
+            for key in symbols:
+                if symbols[key] in ["[#98]", "[Cf]", "Cf"]:
+                    n = list(atomistic[key])
+                    if len(n) == 1:
+                        atomistic.remove_edge(key, n[0])
+
+            n = 0
+            for inside in range(len(descriptors)):
+                if descriptors[inside] in single_path["1"] or get_comp(descriptors[inside]) in single_path["2"]:
+                    continue
+                for outside in range(len(descriptors)):
+                    symbols = nx.get_node_attributes(atomistic, "symbol")
+                    bonds = nx.get_edge_attributes(atomistic, "bonds")
+                    active = nx.get_node_attributes(atomistic, "active")
+                    if inside == outside:
+                        input = descriptors[inside]
+                        for key in symbols:
+                            if symbols[key] == get_comp(input) and active[key]:
+                                atomistic.add_edge(key, neighbors[n], bond_type="2")
+                                nodes = orientation(networkx_graph, inside)
+                                for j in nodes:
+                                    nested_orientation.append(j)
+                                break
+                            elif key == len(symbols) - 1:
+                                added = atomistic.number_of_nodes()
+                                atomistic.add_node(added, symbol=get_comp(input), active=True)
+                                stochastic_descriptor.append(added)
+                                atomistic.add_edge(added, neighbors[n], bond_type="2")
+                                nodes = orientation(networkx_graph, inside)
+                                for j in nodes:
+                                    nested_orientation.append(j)
+                                break
+                    else:
+                        output = descriptors[outside]
+                        for key in symbols:
+                            if symbols[key] == output and active[key]:
+                                count_1 = nx.get_edge_attributes(atomistic, "count_1")
+                                edge = tuple(sorted([key, neighbors[n]]))
+                                if edge in count_1:
+                                    atomistic.add_edge(key, neighbors[n], bond_type="1", count_1 = count_1[edge] + 1)
+                                else:
+                                    atomistic.add_edge(key, neighbors[n], bond_type="1", count_1 = 0)
+                                break
+                            elif key == len(symbols) - 1:
+                                added = atomistic.number_of_nodes()
+                                atomistic.add_node(added, symbol=output, active=True)
+                                stochastic_descriptor.append(added)
+                                atomistic.add_edge(added, neighbors[n], bond_type="1", count_1 = 0)
+                                break
+                    n += 1
+
+        if len(implicit_ends) > 0:
+            symbols = nx.get_node_attributes(atomistic, "symbol")
+            active = nx.get_node_attributes(atomistic, "active")
+            junctions = []
+            for key in symbols:
+                if active[key]:
+                    descriptor_locations = [(d.start(0), d.end(0)) for d in re.finditer(desc_regex, symbols[key])]
+                    if len(descriptor_locations) == 1:
+                        junctions.append(key)
+
+        endgrp_local_el = set()
+        for smiles in implicit_ends:
+            smiles, nested_object_list = sub_obj_with_Bk(smiles)
+
+            descriptor_locations = [(d.start(0), d.end(0)) for d in re.finditer(desc_regex, smiles)]
+
+            ## store stochastic elements
+            if len(descriptor_locations) == 0:
+                endgrp_local_el.add(smiles)
+                continue
+
+            descriptor = smiles[descriptor_locations[0][0]:descriptor_locations[0][1]]
+            smiles = smiles.replace(descriptor, "[Cf]")
+            if "[Bk]" in smiles:
+                smiles, nested_object_list = modify_string(smiles, nested_object_list)
+
+            if is_bigsmarts:
+                rdkit_graph = Chem.MolFromSmiles(smiles)
+            else:
+                rdkit_graph = Chem.MolFromSmiles(smiles)
+
+            networkx_graph = RDKit_to_networkx_graph(mol=rdkit_graph, is_bigsmarts=is_bigsmarts, level=level)
+            # If the level is zero, set explicit_atom_ids of all nodes but bonding descriptors (Cf) and
+            # nested objects (Bk) to True. This is done so that end groups listed after ";" have the attribute
+            # explicit_atom_ids set to True
+            if level == 0:
+                for n in networkx_graph.nodes:
+                    if networkx_graph.nodes[n]["symbol"] not in ["Cf", "Bk"]:
+                        networkx_graph.nodes[n]["explicit_atom_ids"] = True
+
+            def allowed_to_add(graph_descriptor, implicit_descriptor, bond_type):
+                if bond_type == "1" and graph_descriptor == implicit_descriptor:
+                    return True
+                if bond_type == "2" and get_comp(graph_descriptor) == implicit_descriptor:
+                    return True
+                return False
+
+            def add_terminal(graph, smiles, graph_key, b_type):
+                graph = nx.disjoint_union(graph, smiles)
+                symbols = nx.get_node_attributes(graph, "symbol")
+                for key in symbols:
+                    if symbols[key] in ["[#98]", "[Cf]", "Cf"]:
+                        n = list(graph[key])
+                        if len(n) == 1:
+                            neighbor = n[0]
+                            graph.remove_edge(key, neighbor)
+                            graph.add_edge(graph_key, neighbor, bond_type=b_type)
+                return graph
+
+            for key in junctions:
+                if symbols[key] == left_terminal:
+                    iteration = terminals_attachment[0]
+                elif symbols[key] == right_terminal:
+                    iteration = terminals_attachment[1]
+                else:
+                    iteration = ["1", "2"]
+                for b_type in iteration:
+                    if allowed_to_add(symbols[key], descriptor, b_type):
+                        atomistic = add_terminal(atomistic, networkx_graph, key, b_type)
+                        for n in nested_object_list:
+                            nested_objects.append(n)
+                            was_implicit_now.append(True)
+                            nested_orientation.append("1")
+
+        nx.set_node_attributes(atomistic, False, "active")
+
+        local_el = nx.get_node_attributes(atomistic, "local_el")
+        nodes = set(stochastic_descriptor + terminals_indices[-1])
+        for n in nodes:
+            local_el[n] = {"wildcard_cluster": wildcard_cluster, "ru_local_el": ru_local_el,
+                           "endgrp_local_el": endgrp_local_el}
+        nx.set_node_attributes(atomistic, local_el, "local_el")
+
+        # Add attribute level to bonding descriptor nodes to indicate what level they are
+        # level_dict = dict(zip(nodes, len(nodes) * [level]))
+        # For each node, get the levels of the neighbors
+        level_dict = dict({})
+        for n in nodes:
+            # Neighbor levels
+            neighbor_levels = [atomistic.nodes[x]["level"] for x in find_neighbors(atomistic, n) if
+                               "level" in atomistic.nodes[x]]
+            # Take the maximum level
+            max_level = max(neighbor_levels)
+            # Assign it to the bonding descriptor
+            level_dict[n] = max_level
+        nx.set_node_attributes(atomistic, level_dict, "level")
+
+    if len(nested_objects) > 0:
+        atomistic = build_level(atomistic=atomistic,
+                                is_bigsmarts=is_bigsmarts,
+                                object_list=nested_objects,
+                                object_orientation=nested_orientation,
+                                was_implicit=was_implicit_now,
+                                level=level + 1)
+
+    if level > 0:
+        return atomistic
+
+    root = 0
+    symbols = nx.get_node_attributes(atomistic, "symbol")
+    for key in symbols:
+        if key == root:
+            continue
+        if not nx.has_path(atomistic, root, key):
+            atomistic.remove_node(key)
+        else:
+            neighbors = list(atomistic[key])
+            # for d in re.finditer(desc_regex, symbols[key]):
+            #     if len(neighbors) == 2:
+            #         atomistic.remove_node(key)
+            #         if "=" not in symbols[key]:
+            #             atomistic.add_edge(*tuple(neighbors), bond_type=str(rdkit.Chem.rdchem.BondType.SINGLE))
+            #         else:
+            #             atomistic.add_edge(*tuple(neighbors), bond_type=str(rdkit.Chem.rdchem.BondType.DOUBLE))
+            #     break
+            if symbols[key] in ["[#99]", "[Es]", "Es"] and len(neighbors) == 1:
+                atomistic.remove_node(key)
+    if symbols[0] in ["[#99]", "[Es]", "Es"] and len(list(atomistic[0])) == 1:
+        atomistic.remove_node(0)
+
+    symbols = nx.get_node_attributes(atomistic, "symbol")
+    for key in symbols:
+        if symbols[key] == "No":
+            symbols[key] = "H"
+    nx.set_node_attributes(atomistic, symbols, "symbol")
+
+    hydro = nx.get_node_attributes(atomistic, "num_hs")
+    explicit_atom_ids = copy.deepcopy(hydro)
+    for key in explicit_atom_ids:
+        # If the atom is within an end group or already has explicit_atom_ids set to True, set explicit_atom_ids to True
+        if key in endgroup_atom_ids or (
+                "explicit_atom_ids" in atomistic.nodes[key] and atomistic.nodes[key]["explicit_atom_ids"]):
+            explicit_atom_ids[key] = True
+        else:
+            explicit_atom_ids[key] = False
+    nx.set_node_attributes(atomistic, explicit_atom_ids, "explicit_atom_ids")
+
+    return atomistic
+
+
+def add_Es_in_branches(atomistic):
     """
     When an atom has many bonding descriptors, this function adds Es atoms between the atom and
     the bonding descriptors. This is for allowing an atom to have multiple connections to a bonding descriptor node.
@@ -675,7 +1012,6 @@ def add_Es_in_branches(atomistic): # TODO did this today
                 # Update new state index
                 new_index += 1
     return atomistic
-
 
 def build_level(atomistic, is_bigsmarts, object_list, object_orientation, was_implicit, level):
     symbols = nx.get_node_attributes(atomistic, "symbol")
@@ -804,7 +1140,7 @@ def build_level(atomistic, is_bigsmarts, object_list, object_orientation, was_im
                 networkx_graph = RDKit_to_networkx_graph(mol=rdkit_graph, is_bigsmarts=is_bigsmarts, level=level)
 
             # If an atom has multiple bonding descriptors, add Es atoms between the atom and the bonding descriptors
-            networkx_graph = add_Es_in_branches(networkx_graph) # TODO did this today
+            networkx_graph = add_Es_in_branches(networkx_graph)
 
             for d in range(duplication):
                 atomistic = nx.disjoint_union(atomistic, networkx_graph)
@@ -979,14 +1315,6 @@ def build_level(atomistic, is_bigsmarts, object_list, object_orientation, was_im
             atomistic.remove_node(key)
         else:
             neighbors = list(atomistic[key])
-            for d in re.finditer(desc_regex, symbols[key]):
-                if len(neighbors) == 2:
-                    atomistic.remove_node(key)
-                    if "=" not in symbols[key]:
-                        atomistic.add_edge(*tuple(neighbors), bond_type=str(rdkit.Chem.rdchem.BondType.SINGLE))
-                    else:
-                        atomistic.add_edge(*tuple(neighbors), bond_type=str(rdkit.Chem.rdchem.BondType.DOUBLE))
-                break
             if symbols[key] in ["[#99]", "[Es]", "Es"] and len(neighbors) == 1:
                 atomistic.remove_node(key)
     if symbols[0] in ["[#99]", "[Es]", "Es"] and len(list(atomistic[0])) == 1:
@@ -1028,12 +1356,15 @@ def build_topology(atomistic):
     elements = nx.get_node_attributes(atomistic, "symbol")
     bonds = nx.get_edge_attributes(atomistic, "bond_type")
 
+    # STEP 1: Generate list of bonding descriptor nodes
     descriptors = []
     for key in elements:
         d = list(re.finditer(desc_regex, elements[key]))
         if len(d) != 0:
             descriptors.append(key)
 
+    # STEP 2: Create a new attribute, ids, that groups atoms in the same repeat unit or end group
+    # Find the nodes connected to bonding descriptor by a bond type 1
     edge_labels = nx.get_edge_attributes(atomistic, "bond_type")
     start = []
     for i in edge_labels:
@@ -1045,18 +1376,21 @@ def build_topology(atomistic):
                 start.append(i[1])
     if len(start) == 0:
         start = [0]
-
+    # Find nodes that are in the same repeat unit or end group as the ones found above
     extracted = []
     for i in range(len(start)):
         extracted.append(extract_atoms(atomistic, set(), start[i], descriptors))
+    # Create an ID for each repeat unit or end group
     ids = dict()
     counter = 1
     for i in extracted:
         for k in i:
             ids[k] = counter
         counter += 1
+    # Set the new attribute, ids
     nx.set_node_attributes(atomistic, ids, "ids")
 
+    # Find the nodes connected to bonding descriptor by a bond type 2
     start = []
     for i in edge_labels:
         if edge_labels[i] == "2":
@@ -1067,10 +1401,11 @@ def build_topology(atomistic):
             else:
                 if i[1] not in ids:
                     start.append(i[1])
-
+    # Find nodes that are in the same repeat unit or end group as the ones found above
     extracted = []
     for i in range(len(start)):
         extracted.append(extract_atoms(atomistic, set(), start[i], descriptors))
+    # Create an ID for each repeat unit or end group
     for i in extracted:
         for k in i:
             ids[k] = counter
@@ -1078,6 +1413,7 @@ def build_topology(atomistic):
     for i in descriptors:
         ids[i] = counter
         counter += 1
+    # Set the new attribute, ids
     nx.set_node_attributes(atomistic, ids, "ids")
 
     topology = atomistic.copy()
@@ -1097,6 +1433,7 @@ def build_topology(atomistic):
                         edge_labels[(min(d, j), max(d, j))] = "3"
     nx.set_edge_attributes(topology, edge_labels, "bond_type")
 
+    # Contract repeat units and end groups into one single node
     edge_labels = nx.get_edge_attributes(topology, "bond_type")
     vals = list(edge_labels.values())
     while vals.count("1") + vals.count("2") + vals.count("3") < len(vals):
@@ -1107,11 +1444,12 @@ def build_topology(atomistic):
         edge_labels = nx.get_edge_attributes(topology, "bond_type")
         vals = list(edge_labels.values())
 
+    # Create a directed graph
     topology_undir = copy.deepcopy(topology)
-
     topology = nx.to_directed(topology)
     topology = nx.DiGraph(topology)
 
+    # The functions above add forward and reverse edges between all nodes, but we just want to keep the necessary ones between with the bonding descriptors
     edge_labels = nx.get_edge_attributes(topology, "bond_type")
     for i in edge_labels:
         a = edge_labels[i] == "1" and i[0] in descriptors

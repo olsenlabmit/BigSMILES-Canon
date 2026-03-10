@@ -573,7 +573,7 @@ class SMILES:
         return smilesStr
     
     
-    def writeLinear(self,base):
+    def writeLinear(self,base, ring_counter=0):
         smilesStr = ''
         
         
@@ -633,13 +633,13 @@ class SMILES:
                     self.ringDict[edge] = -2
                     self.usedRingID[ringID] = False
                 
-                ringIDstr = getIdStr(ringID+1)
+                ringIDstr = getIdStr(ringID+1+ring_counter)
                 
                 smilesStr = smilesStr + ringbond + ringIDstr
                 
             # write branches
             for nextAtom in nextAtoms[start+hcount+ringcount:-1]:
-                smilesStr = smilesStr + '(' + self.writeLinear((thisAtom,nextAtom)) +')'
+                smilesStr = smilesStr + '(' + self.writeLinear((thisAtom,nextAtom), ring_counter=ring_counter) +')'
             
             prevAtom = thisAtom
             if start+hcount+ringcount == len(nextAtoms):
@@ -652,10 +652,10 @@ class SMILES:
         
 
     
-    def writeComponents(self,source):
+    def writeComponents(self,source, ring_counter=0):
         tmpComponents = self.components.copy()
         smilesStrs = list()
-        smilesStrs.append(self.writeLinear((None,source)))
+        smilesStrs.append(self.writeLinear((None,source), ring_counter=ring_counter))
         
         for item in tmpComponents:
             if source in item:
@@ -665,7 +665,7 @@ class SMILES:
         for item in tmpComponents:
             if len(item) > 0:
                 base = next(iter(item))
-                smilesStrs.append(self.writeLinear((None,base)))
+                smilesStrs.append(self.writeLinear((None,base), ring_counter=ring_counter))
         
         return '.'.join(smilesStrs)
          

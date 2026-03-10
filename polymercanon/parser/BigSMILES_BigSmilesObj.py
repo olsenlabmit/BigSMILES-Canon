@@ -5,8 +5,6 @@ Created on Thu Aug 15 12:15:46 2019
 @author: tslin
 """
 
-import re
-
 from .SMILES import SMILES
 from .BigSmilesPattern import BigSmilesPattern
 from .BigSMILES_Bond import BigSMILES_Bond
@@ -18,8 +16,9 @@ from collections import deque
 
 class BigSMILES(SMILES):
     _count = 0
-    def __init__(self,inStr="",pos=0,UpperBond_Dict=None,index=list()):
+    def __init__(self,inStr="",pos=0,UpperBond_Dict=None,index=list(), ringCounter=0):
         BigSMILES._count = BigSMILES._count + 1
+        self.ringCounter = ringCounter
         self.rawStr = inStr.split()[0]
         self.index = index
         self.dummyStoObjStr = None
@@ -323,7 +322,7 @@ class BigSMILES(SMILES):
                     thisBond = ''
             return SMILES.writeAtom(self,prevAtom,thisAtom,thisBond,rotCount,swapCount,hcount)
 
-    def place_bonding_descriptors_at_end(self, source, target):    # TODO did this today
+    def place_bonding_descriptors_at_end(self, source, target):
         """
         Write a repeating unit placing the bonding descriptors at the ends of the string.
         Args:
@@ -392,7 +391,7 @@ class BigSMILES(SMILES):
         # print(self.T.edges())
         # smilesStr = self.writeLinear((None,source))
 
-        smilesStr = self.writeComponents(source)
+        smilesStr = self.writeComponents(source, ring_counter=self.ringCounter)
         self.noWriteBondDesc = False
 
         return smilesStr
@@ -421,17 +420,8 @@ class BigSMILES(SMILES):
             self.noWriteBondDesc=False
             return smilesStr
         else:
-            for key in self.Bond_Dict:
-                if "<" in key:
-                    source = self.Bond_Dict[key][1]
-            x = []
-            for key in self.Bond_Dict:
-                if ">" in key:
-                    x.append(key)
-            x = sorted(x)
-            target = self.Bond_Dict[x[0]][1]
-            # source = bonding_sites[0]
-            # target = bonding_sites[1]
+            source = bonding_sites[0]
+            target = bonding_sites[1]
         
         # get the backbone (defined as the shortest path between the two ends)
         path = nx.shortest_path(self.G,source=source,target=target)
@@ -495,7 +485,7 @@ class BigSMILES(SMILES):
         #smilesStr = self.writeLinear((None,source))
         
         
-        smilesStr = self.writeComponents(source)
+        smilesStr = self.writeComponents(source, ring_counter=self.ringCounter)
         self.noWriteBondDesc=False
         
         return smilesStr
