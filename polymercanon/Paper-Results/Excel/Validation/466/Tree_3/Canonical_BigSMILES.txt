@@ -1,0 +1,2 @@
+Initial: OC(=O)C(C)(C){[$][$]CC(c1ccccc1)[$][$]}{[$][$]CC(c1ccccc1)[$],[$]CC(C(=O)O)[$][$]}ON(C(C)(C)(C))C(C(C)(C)(C))P(=O)(OCC)(OCC) 
+Canonical: [H]CCOP(=O)(OCC)C(C(C)(C)C)N(C(C)(C)C)O{[<][>]CC(C(=O)O)[<],[>]C(C(=O)O)C[<],[>]CC(c(cc1)ccc1)[<],[>]C(c(cc2)ccc2)C[<][>]}C(C(=O)O)(C)C[H] 

@@ -1,0 +1,3 @@
+Initial: {[][<]CCCCC(C)(C)C(=O){[>][<]OCC[>][<]}OC(=O)C(C)(C)CCCC[<],[>]n1cc([<2])nn1,[>2]COCC(COC[>2])(COC[>2])COC[>2][]} 
+Canonical: {[][>2]c(nn4)cn4[<1],[>3]COCC(COC[<2])(COC[<2])COC[<2],[>4]n(nn2)cc2[<3],[>2]c(nn1)cn1[<6],[>4]n(nn8)cc8[<1],[>3]COCC(COC[<1])(COC[<1])COC[<1],[>6]CCCCC(C)(C)C(=O)O{[<][>]CCO[<][>]}C(=O)C(C)(C)CCCC[<4],[>6]CCCCC(C)(C)C(=O)O{[<][>]CCO[<][>]}C(=O)C(C)(C)CCCC[<1][]}
+Other options:

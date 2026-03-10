@@ -1,0 +1,2 @@
+Initial: O{[<][>]C(=O)CCCCCN[<][>]} 
+Canonical: [H]O{[<][>]C(=O)CCCCCN[<][>]}[H] 

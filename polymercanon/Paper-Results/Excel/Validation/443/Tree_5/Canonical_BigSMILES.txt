@@ -1,0 +1,2 @@
+Initial: O{[<][>]CCCCCC(=O)[<][>]}OC(c1ccccc1)(c(cc2)ccc2OC(=O)C(C){[$][$]CC(C)(C(=O)OC)[$][$]}Br)C(c3ccccc3)(c(cc4)ccc4OC(=O)C(C){[$][$]CC(c5ccccc5)[$][$]}Br)O{[>][<]C(=O)CCCCC[>][<]}O 
+Canonical: Br{[<][>]CC(C)(C(OC)=O)[<],[>]C(C)(C(OC)=O)C[<][>]}C(C)C(=O)Oc(cc%16)ccc%16C(c(cc8)ccc8)(O{[<][>]C(=O)CCCCC[<][>]}O[H])C(c(cc4)ccc4)(O{[<][>]C(=O)CCCCC[<][>]}O[H])c(cc2)ccc2OC(=O)C(C){[<][>]CC(c(cc%16)ccc%16)[<],[>]C(c(cc1)ccc1)C[<][>]}Br 

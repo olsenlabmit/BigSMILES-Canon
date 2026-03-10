@@ -1,0 +1,2 @@
+Initial: {[][<]c1ccc(cc1)S[>][]} 
+Canonical: {[][>]c(cc1)ccc1S[<][]} 

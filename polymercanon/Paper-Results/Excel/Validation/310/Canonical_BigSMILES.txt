@@ -1,0 +1,4 @@
+Initial: C{[>][<]OCC[>][<]}Cl 
+Canonical: [H]C{[<][>]OCC[<][>]}Cl
+Other options:
+ClC{[<][>]COC[<][>]}[H]

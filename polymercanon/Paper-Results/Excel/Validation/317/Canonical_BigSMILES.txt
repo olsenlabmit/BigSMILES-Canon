@@ -1,0 +1,4 @@
+Initial: O{[>][<]CCO[>][<]}C(=O)C(C)(C)SC(=S)SCCCCCCCCCCCC 
+Canonical: [H]O{[<][>]CCO[<][>]}C(=O)C(C)(C)SC(=S)SCCCCCCCCCCCC[H]
+Other options:
+[H]CCCCCCCCCCCCSC(=S)SC(C)(C)C(=O)O{[<][>]CCO[<][>]}[H]

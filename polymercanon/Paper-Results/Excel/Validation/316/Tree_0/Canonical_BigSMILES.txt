@@ -1,0 +1,2 @@
+Initial: N#CC(C)(C){[$][$]CC(c1ccccc1)[$];[$]C(C)(C)C#N,[$]C=C(c1ccccc1)[]} 
+Canonical: [H]CC(C#N)(C){[<][>]CC(c(cc2)ccc2)[<],[>]C(c(cc1)ccc1)C[<];[>]C(C#N)(C)C[H],[>]C=Cc(cc4)c(cc4)[H][]} 

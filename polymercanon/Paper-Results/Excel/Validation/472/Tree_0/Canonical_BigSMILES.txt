@@ -1,0 +1,2 @@
+Initial: {[][<]CCN([>])[>][]} 
+Canonical: {[][>]CCN([<])[<][]} 

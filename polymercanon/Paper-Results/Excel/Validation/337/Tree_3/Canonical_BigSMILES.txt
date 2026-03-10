@@ -1,0 +1,2 @@
+Initial: CCC(C){[$][$]CC(c1ccccc1)[$][$]}{[$][$]CC(C)(C(=O)OCC(CC)CCCC)[$][$]}[H] 
+Canonical: [H]{[<][>]CC(C)(C(OCC(CCCC)CC)=O)[<],[>]C(C)(C(OCC(CCCC)CC)=O)C[<][>]}{[<][>]CC(c(cc2)ccc2)[<],[>]C(c(cc1)ccc1)C[<][>]}C(C)CC[H] 

@@ -1,0 +1,2 @@
+Initial: N([#Arm])([#Arm]){[$][$]CC(c1ccccc1)[$][$]}Cc(cc1)ccc1C{[$][$]CC(c1ccccc1)[$][$]}N([#Arm])([#Arm]).{#Arm=CC{[>][<]OC(=O)C(C)OC(=O)C(C)[>][<]}O} 
+Canonical: [H]O{[<][>]CC(c(cc4)ccc4)[<],[>]C(c(cc2)ccc2)C[<][>]}CCN({[<][>]C(C)C(=O)OC(C)C(=O)O[<][>]}Cc(cc1)ccc1C{[<][>]CC(c(cc%16)ccc%16)[<],[>]C(c(cc8)ccc8)C[<][>]}N(CCO{[<][>]C(=O)C(C)OC(=O)C(C)O[<][>]}{[<][>]C(=O)C(C)OC(=O)C(C)O[<][>]}[H])CCO{[<][>]C(=O)C(C)OC(=O)C(C)O[<][>]}{[<][>]C(=O)C(C)OC(=O)C(C)O[<][>]}[H])CCO{[<][>]C(=O)C(C)OC(=O)C(C)O[<][>]}[H] 

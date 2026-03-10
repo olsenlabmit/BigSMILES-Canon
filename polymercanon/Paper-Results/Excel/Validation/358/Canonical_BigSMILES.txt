@@ -1,0 +1,5 @@
+Initial: {[][$]CC(C1CCCCC1)[$][$]}{[$][$]CCC(C)C[$],[$]CC(C(C)C)[$],[$]CC(C)(CC)[$][]} 
+Canonical: {[][>]CC(C(CC4)CCC4)[<],[>]C(C(CC2)CCC2)C[<][>]}{[<][>]CC(C(C)C)[<],[>]C(C(C)C)C[<],[>]CCC(C)C[<],[>]CC(C)CC[<],[>]CC(C)(CC)[<],[>]C(C)(CC)C[<][]}
+Other options:
+{[][>]CC(C(C)C)[<],[>]C(C(C)C)C[<],[>]CCC(C)C[<],[>]CC(C)CC[<],[>]CC(C)(CC)[<],[>]C(C)(CC)C[<][>]}{[<][>]CC(C(CC2)CCC2)[<],[>]C(C(CC1)CCC1)C[<][]}
+{[][>]CC(C(C)C)[<],[>]C(C(C)C)C[<],[>]CCC(C)C[<],[>]CC(C)CC[<],[>]CC(C)(CC)[<],[>]C(C)(CC)C[<][>]}{[<][>]CC(C(CC2)CCC2)[<],[>]C(C(CC1)CCC1)C[<][]}

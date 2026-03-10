@@ -1,0 +1,5 @@
+Initial: c1ccccc1{[<][>][Si](CC)(CC)CCC[<][>]}CC(c1ccccc1)(c1ccccc1){[$][$]CC(C(=O)OCCO)[$][$]} 
+Canonical: [H]{[<][>]CC(C(=O)OCCO)[<],[>]C(C(=O)OCCO)C[<][>]}C(c(cc2)ccc2)(c(cc2)ccc2)C{[<][>][Si](CC)(CC)CCC[<][>]}c(cc1)c(cc1)[H]
+Other options:
+[H]c(cc2)c(cc2){[<][>][Si](CC)(CC)CCC[<][>]}CC(c(cc1)ccc1)(c(cc1)ccc1){[<][>]CC(C(=O)OCCO)[<],[>]C(C(=O)OCCO)C[<][>]}[H]
+[H]c(cc2)c(cc2)C{[<][>]CC[Si](CC)(CC)C[<][>]}C(c(cc1)ccc1)(c(cc1)ccc1){[<][>]CC(C(=O)OCCO)[<],[>]C(C(=O)OCCO)C[<][>]}[H]

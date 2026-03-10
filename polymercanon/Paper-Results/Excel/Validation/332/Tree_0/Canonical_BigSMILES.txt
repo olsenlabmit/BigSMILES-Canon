@@ -1,0 +1,2 @@
+Initial: C(c1ccccc1)O{[>][<]CCO[>],[<]CC(COCCN(C(C)C)(C(C)C))O[>][<]}[H] 
+Canonical: [H]c(cc1)c(cc1)CO{[<][>]CCO[<],[>]CC(COCCN(C(C)C)C(C)C)O[<][>]}[H] 

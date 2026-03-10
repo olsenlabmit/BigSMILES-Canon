@@ -1,0 +1,2 @@
+Initial: OCCCCCC(=O)O{[>][<]CC[<2],[>2]CCCC(=C)O[>][<]}Cc1cc([#Arm1])cc([#Arm2])c1.{#Arm1=c2nnn(CC{[$][$]CC(c3ccccc3)[$][$]}CCC)c2}.{#Arm2=c4nnn({[>][<]CCO[>][<]}C)c4} 
+Canonical: [H]CCC{[<][>]CC(c(cc%16)ccc%16)[<],[>]C(c(cc8)ccc8)C[<][>]}CCn(nn4)cc4c(cc(c(nn1)cn1C{[<][>]COC[<][>]}[H])c2)cc2CO{[<][>]C(=C)CCCCCO[<][>]}C(=O)CCCCCO[H] 

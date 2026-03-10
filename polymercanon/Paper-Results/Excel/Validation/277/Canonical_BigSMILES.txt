@@ -1,0 +1,3 @@
+Initial: {[][<]Oc1c(Br)cc(cc1Br)C(C)(C)c2cc(Br)c(c(Br)c2)O[<],[>]C(=O)[>][]} 
+Canonical: {[][>2]C(=O)[<1],[>3]Oc(c(c2)Br)c(Br)cc2C(C)(C)c(cc1Br)cc(Br)c1O[<2],[>2]C(=O)[<3],[>3]Oc(c(c2)Br)c(Br)cc2C(C)(C)c(cc1Br)cc(Br)c1O[<1][]}
+Other options:

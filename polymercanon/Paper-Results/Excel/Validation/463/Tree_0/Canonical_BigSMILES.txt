@@ -1,0 +1,2 @@
+Initial: C=C(C)C(=O)OCCC[Si](C)(C){[>][<]O[Si](C)(C)[>][<]}O[Si](C)(C)CCCC 
+Canonical: [H]CC(=C)C(=O)OCCC[Si](C)(C)O[Si](C)(C){[<][>]O[Si](C)(C)[<][>]}CCCC[H] 

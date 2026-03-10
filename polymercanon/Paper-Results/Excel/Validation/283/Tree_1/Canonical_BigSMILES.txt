@@ -1,0 +1,2 @@
+Initial: {[][<]N1C(=O)c2cc(ccc2C1=O)C(C(F)(F)F)(C(F)(F)F)c3cc4C(=O)N(C(=O)c4cc3)[<],[>]c1cc(ccc1)C(=O)c2ccc(cc2)[>][]} 
+Canonical: {[][>2]c(cc2)ccc2C(=O)c(ccc1)cc1[<1],[>3]N(C(c9cc%10)=O)C(=O)c9cc%10C(C(F)(F)F)(C(F)(F)F)c(ccc4C5=O)cc4C(=O)N5[<2],[>2]c(cc2)ccc2C(=O)c(ccc%18)cc%18[<3],[>2]c(ccc%18)cc%18C(=O)c(cc%18)ccc%18[<3],[>2]c(ccc%18)cc%18C(=O)c(cc%18)ccc%18[<1],[>3]N(C(c9cc%10)=O)C(=O)c9cc%10C(C(F)(F)F)(C(F)(F)F)c(ccc%18C%19=O)cc%18C(=O)N%19[<1][]} 

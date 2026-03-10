@@ -1,0 +1,2 @@
+Initial: {[][$]CC(C)(C(=O)OCCO)[$][]} 
+Canonical: {[][>]CC(C(=O)OCCO)(C)[<],[>]C(C(=O)OCCO)(C)C[<][]} 

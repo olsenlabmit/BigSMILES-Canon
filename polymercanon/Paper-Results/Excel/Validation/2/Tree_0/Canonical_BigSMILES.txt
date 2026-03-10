@@ -1,0 +1,2 @@
+Initial: {[][$]C\C=C/C[$][]} 
+Canonical: {[][>]C/C=C\C[<][]} 
