@@ -16,8 +16,8 @@ import networkx as nx
 import copy
 import string
 import itertools
-import os
 import datetime
+import os
 RDLogger.DisableLog('rdApp.*')
 
 
@@ -229,18 +229,41 @@ def generate_shortest_path(graph, start, end):
         return []
 
 
-def generate_simple_paths(graph, start, end):
+def generate_simple_paths(graph, start, end, allowed_repeats=None):
     """
     Generates all simple paths between 2 nodes in a graph
+    the nodes listed in allowed_nodes
     Args:
         graph: graph
         start: starting node
         end: ending node
+        allowed_repeats: nodes that can be visited more than once
 
     Returns: list of nodes
     """
+
+    def dfs_paths_allow_repeat(graph, start, end, allowed_repeats=None, path=None):
+        """
+        This recursive function generates all paths visiting all nodes but bonding descriptors only once
+        """
+        if allowed_repeats is None:
+            allowed_repeats = set()
+
+        if path is None:
+            path = [start]
+
+        if start == end:
+            yield path
+            return
+
+        for neighbor in graph.neighbors(start):
+            if neighbor in allowed_repeats or neighbor not in path:
+                new_path = path + [neighbor]
+                yield from dfs_paths_allow_repeat(graph, neighbor, end, allowed_repeats, new_path)
+
     try:
-        return nx.all_simple_paths(graph, start, end)
+        return list(dfs_paths_allow_repeat(graph, start, end, allowed_repeats=allowed_repeats))
+        # return nx.all_simple_paths(graph, start, end)
     except:
         return []
 
@@ -345,8 +368,8 @@ def choose_bonding_descriptors(bd_nodes, topology_graph, lower_level_group):
     removed_nodes = []
     for _start, _end in itertools.combinations(lower_level_group, 2):
         # Generate paths (forward and reverse because it is a DiGraph)
-        paths_forward = list(generate_simple_paths(topology_graph, _start, _end))
-        paths_reverse = list(generate_simple_paths(topology_graph, _end, _start))
+        paths_forward = list(generate_simple_paths(topology_graph, _start, _end, allowed_repeats=bd_nodes))
+        paths_reverse = list(generate_simple_paths(topology_graph, _end, _start, allowed_repeats=bd_nodes))
         paths = paths_forward + paths_reverse
         for _path in paths:
             # Eliminate bonding descriptors along _path from bd_nodes
@@ -355,13 +378,13 @@ def choose_bonding_descriptors(bd_nodes, topology_graph, lower_level_group):
                     bd_nodes.remove(node)
                     removed_nodes.append(node)
 
-    # Remove conjugate descriptors from the same level    TODO check if this is correct
+    # Remove conjugate descriptors from the same level
     for bd1 in removed_nodes:
         for bd2 in bd_nodes:
             # If they are connected by end groups, it should not be removed. This is because they are not in the same
             # stochastic object
             if_same_object = True
-            for _path in list(generate_simple_paths(topology_graph, bd1, bd2)) + list(generate_simple_paths(topology_graph, bd2, bd1)):
+            for _path in list(generate_simple_paths(topology_graph, bd1, bd2, allowed_repeats=bd_nodes)) + list(generate_simple_paths(topology_graph, bd2, bd1, allowed_repeats=bd_nodes)):
                 for n in _path:
                     if n in lower_level_group:
                         if_same_object = False
@@ -373,7 +396,6 @@ def choose_bonding_descriptors(bd_nodes, topology_graph, lower_level_group):
             # If both nodes are not the same and are a conjugate pair, remove bd2 from bd_nodes
             if (not if_same_node) and if_conjugate and if_same_object:
                 bd_nodes.remove(bd2)
-
 
     return bd_nodes
 
@@ -437,6 +459,26 @@ def define_starts_and_ends(topology_graph, atomistic_graph):
     non_stochastic_groups, _ = get_nonstochastic_atoms(topology_graph, atomistic_graph)
     # Get all non-stochastic end groups (not linkers)
     end_groups = [node for node in non_stochastic_groups if topology_graph.degree(node) == 1]
+    # Group end groups connected to the same bonding descriptor with the same bond type
+    level_zero_bd_nodes = [x for x in all_bd_nodes if topology_graph.nodes[x]["level"] == 0]
+    _end_groups = []
+    for bd in level_zero_bd_nodes:
+        # Get the end groups connected to the bonding descriptor
+        connected_end_groups = [n for n in set(nx.all_neighbors(topology_graph, bd)) if n in end_groups]
+        connected_end_group_ids = [topology_graph.nodes[node]["ids"] for node in connected_end_groups]
+        topology_ids_to_nodes = dict(zip(connected_end_group_ids, connected_end_groups))
+        # Group the ones that have the same bond type to the bonding descriptor
+        _group = {"1": set([]), "2": set([])}
+        for n in set(nx.all_neighbors(atomistic_graph, bd)):
+            ids = atomistic_graph.nodes[n]["ids"]
+            if ids in connected_end_group_ids:
+                _group[atomistic_graph.edges[n, bd]["bond_type"].split("_")[0]].add(topology_ids_to_nodes[ids])
+        # Extract the groups
+        _e_group = [list(x)[0] if len(x) == 1 else list(x) for x in _group.values()]
+        _end_groups += [x for x in _e_group if x != []]
+    # Update list of end groups
+    end_groups = _end_groups
+
 
     # FIRST STEP: Define starts and ends from atoms and bonding descriptors within non-nested stochastic objects -------
     # Get all bonding descriptors at level 0
@@ -476,7 +518,6 @@ def define_starts_and_ends(topology_graph, atomistic_graph):
                           if (topology_graph.nodes[x]["level"] == l - 1 and topology_graph.degree(x) == 1)
                           and (x not in starts_and_ends)
                           and (x not in non_stochastic_groups)]
-                          # and (topology_graph.nodes[x]["explicit_atom_ids"] == False)] # TODO check
         # Add to starts
         starts += bd_level + end_groups_l_1
 
@@ -659,7 +700,7 @@ def choose_heaviest_longest_path(start, end, atomistic):
                            sum([(periodic_table.GetAtomicWeight(atomistic.nodes[node]["symbol"]) + atomistic.nodes[node]["num_hs"]) * (i + 1)**2 for i, node in    # The position is squared because we want to give a higher weight to it
                                 enumerate(p)])
                            ),
-                           reverse=True)[0]  # TODO probably unify this function with sort_paths()
+                           reverse=True)[0]
 
     return heaviest_path
 
@@ -718,7 +759,7 @@ def get_endgroup_end(atom_group, atomistic):
                 if check_if_bonding_descriptor(atomistic.nodes[neighbor]["symbol"]):
                     connected_to_bd.append(n)
                     break
-        # Choose longest path    TODO this can generate 2 paths that cross the same atoms: [3, 2, 1, 0] and [3, 2, 0, 1] -> maybe change the priority rule that chooses the path later
+        # Choose longest path
         ends = get_longest_path(start=connected_to_bd, end=atom_group, atomistic=atomistic)
         # Sort paths according to weight
         ends = sort_paths(ends, atomistic)[0]
@@ -800,26 +841,6 @@ def find_shortest_paths(non_descriptors, atomistic, atomistic_bonds, atomistic_i
 
         # For end groups (if one of the atom list is empty)
         if atom["1"] == [] or atom["2"] == []:
-            # # TODO uncomment this
-            # # Get atoms in the group
-            # atom_group = [k for k, v in atomistic_ids.items() if v == id]
-            # # Get ends of the end group
-            # endgroup_ends = get_endgroup_end(atom_group=atom_group, atomistic=atomistic)
-            # # If atom["1"] is empty, the start will be an end of the end group and the end will be atom["2"]
-            # if atom["1"] == []:
-            #     start = endgroup_ends
-            #     end = atom["2"]
-            # # If atom["2"] is empty, the start will be atom["1"] and the end will be an end of the end group
-            # else:
-            #     start = atom["1"]
-            #     end = endgroup_ends
-
-            ## TODO this remains commented
-            # Get the longest and heaviest path
-            # _path = choose_heaviest_longest_path(start=start, end=end, atomistic=atomistic) #TODO
-            # shortest_paths.append(_path)
-
-
             # Get atoms in the group
             atom_group = [k for k, v in atomistic_ids.items() if v == id]
             # If atom["1"] is empty, the start will be an atom of the end group and the end will be atom["2"]
@@ -1080,7 +1101,7 @@ def define_left_right_states(terminals, extracted, reverse_extracted=False):
             right.append(terminals[i][0])
             right_states.append(terminals[i][1])
 
-        if len(ends) == 1:  # TODO check this. I did this bc sometimes the last transition is pointing the wrong way
+        if len(ends) == 1:
             right = [terminals[0][0]]
             right_states = [terminals[0][1]]
             left = []
@@ -1219,7 +1240,8 @@ def add_to_transitions(left_states, smiles, right_states, alphabets, transitions
         if "Es_id" in atomistic.nodes[group[0]].keys():
             _id = str(atomistic.nodes[group[0]]["Es_id"])
             smiles = smiles.replace("Es", f"Es_{_id}")
-        alphabets[smiles] = caps[alpha_count]
+        # alphabets[smiles] = caps[alpha_count]
+        alphabets[smiles] = alpha_count
         alpha_count += 1
         transitions.append([left_states, alphabets[smiles], smiles, right_states])
 
@@ -1729,14 +1751,8 @@ def generate_tree_transitions(atomistic, topology, ending_bonding_descriptors, s
             bonds = sorted(bonds.items(), key=lambda item: item[1][1])
             # Remove numbers used for sorting
             bonds = {b[0]: b[1][0] for b in bonds}
-            # Remove bonds that are not in break_bond_modified
-            # _nodes = []
-            # for b in break_bond_modified:
-            #     _nodes.append(b[0])
-            #     _nodes.append(b[1])
-            # bonds = {k: v for k, v in bonds.items() if (k[0] in _nodes) and (k[1] in _nodes)}
 
-            # List of bonding descriptors TODO remove this?
+            # List of bonding descriptors
             bonding_descriptor_list = [x for x in symbols.keys() if check_if_bonding_descriptor(symbols[x])]
             # List of symbols
             symbol_list = list(symbols.keys())
@@ -1757,7 +1773,8 @@ def generate_tree_transitions(atomistic, topology, ending_bonding_descriptors, s
                                                                                  symbols,
                                                                                  checked_nodes,
                                                                                  _alpha_count,
-                                                                                bonds_object, bond_dir_object, bond_stereo_object, bond_direction, old_state_machine_edges)
+                                                                                bonds_object, bond_dir_object, bond_stereo_object, bond_direction,
+                                                                                old_state_machine_edges)
             # Filter the alphabets that correspond to the end group we are processing now
             _endgroup_alphabets = {}
             for _id, _map in endgroup_alphabets.items():
@@ -1805,17 +1822,23 @@ def generate_tree_transitions(atomistic, topology, ending_bonding_descriptors, s
             # Remove duplicates
             hits = list(set(hits))
             # Number of hits divided by the total end group alphabets to get the path with the most coincidence
-            number_of_hits = len(hits)/len(endgroup_alphabets)
+            number_of_hits = len(hits)#/len(endgroup_alphabets)
+
+            # Calculate mass score
+            # mass_score = sum([(pos+1)*Chem.Descriptors.MolWt(Chem.MolFromSmiles(tr[2])) for pos, tr in enumerate(_transitions)])
+
+            # Add a list of alphabets to be untied by ASCII symbol
+            _alphabets = sorted(list(endgroup_alphabets.keys()))
 
             # Add to list of end groups and hits
-            endgroup_hits.append([number_of_hits, copy.deepcopy(_transitions), path])
+            endgroup_hits.append([number_of_hits, copy.deepcopy(_transitions), path, len(endgroup_alphabets), len(path), _alphabets])# mass_score, _alphabets])
             _transitions = []
 
             # Return _alpha_count to original value
             _alpha_count = alpha_count
 
-        # Choose from the set of end group transitions based on the number of hits TODO could to EMD?
-        endgroup_hits = sorted(endgroup_hits, key=lambda x: x[0], reverse=True)
+        # Choose from the set of end group transitions based on the number of hits
+        endgroup_hits = sorted(endgroup_hits, key=lambda x: [x[0], x[-3], x[-2], x[-1]], reverse=True)#sorted(endgroup_hits, key=lambda x: [x[0], x[-4], x[-3], x[-2], x[-1]], reverse=True)
         max_hits = endgroup_hits[0][0]
         endgroup_hits = [x[1] for x in endgroup_hits if x[0] == max_hits]
         # To untie, get the one that has the most transitions
@@ -1832,34 +1855,12 @@ def generate_tree_transitions(atomistic, topology, ending_bonding_descriptors, s
         endgroup_alphabet_list = list(set([x[1] for x in end_group_transitions]))
         alpha_count += len(endgroup_alphabet_list)
 
-        # # To untie, get the heaviest path
-        # # Choose the longest paths
-        # size_longest_path = len(endgroup_hits[0][2])
-        # for e in endgroup_hits:
-        #     path = e[2]
-        #     size_path = len(path)
-        #     if size_path > size_longest_path:
-        #         size_longest_path = size_path
-        # longest_path = [x for x in endgroup_hits if len(x[2]) == size_longest_path]
-        # # Among the longest paths, choose the heaviest one and the one with the heaviest atoms by the end
-        # periodic_table = Chem.GetPeriodicTable()
-        # heaviest_path = sorted(longest_path,
-        #                        key=lambda p: (
-        #                        sum([periodic_table.GetAtomicWeight(atomistic.nodes[node]["symbol"]) + atomistic.nodes[node]["num_hs"]  for node in p[2]]),
-        #                        sum([(periodic_table.GetAtomicWeight(atomistic.nodes[node]["symbol"]) + atomistic.nodes[node]["num_hs"]) * (i + 1)**2 for i, node in    # The position is squared because we want to give a higher weight to it
-        #                             enumerate(p[2])])
-        #                        ),
-        #                        reverse=True)[0]
-        # # Get the final end group transitions
-        # end_group_transitions = heaviest_path[1]
-        # # Add to RU transitions
-        # transitions += end_group_transitions
-
-    # Adding initial transitions to bonding descriptors TODO added this to avoid assigning bond types to Es
+    # Adding initial transitions to bonding descriptors
     es_id = 0
     for bd in starting_bonding_descriptors:
         smiles = f"[Es_{es_id}][*]"
-        alphabets[smiles] = caps[alpha_count]
+        # alphabets[smiles] = caps[alpha_count]
+        alphabets[smiles] = alpha_count
         new_transition = [bd, alphabets[smiles], smiles, []]
         transitions.append(new_transition)
         es_id += 1
@@ -1875,676 +1876,6 @@ def generate_tree_transitions(atomistic, topology, ending_bonding_descriptors, s
     final_states, table = cap_transitions(table, max_state, ending_bonding_descriptors)
 
     return final_states, table
-
-
-def generate_tree_transitions_old(atomistic, topology, ending_bonding_descriptors, starting_bonding_descriptors):
-    """
-    This function generates the transitions of a tree automata that represent a polymer. Here, the end group backbone
-    is defined by choosing the longest or heaviest path
-    Args:
-        atomistic: polymer atomistic graph
-        topology: polymer topology graph
-        ending_bonding_descriptors: list of bonding descriptors that will be ending states
-
-    Returns: DataFrame with the transitions
-
-    """
-
-    # Get atomistic graph
-    atomistic_symbols = nx.get_node_attributes(atomistic, "symbol")
-    atomistic_bonds = nx.get_edge_attributes(atomistic, "bond_type")
-    atomistic_ids = nx.get_node_attributes(atomistic, "ids")
-
-    # Get topology graph
-    topology_symbols = nx.get_node_attributes(topology, "symbol")
-    topology_ids = nx.get_node_attributes(topology, "ids")
-
-    # List of bonding descriptor nodes
-    bonding_descriptor_list = [x for x in atomistic_symbols.keys() if check_if_bonding_descriptor(atomistic_symbols[x])]
-    # List of bonds that do not connect bonding descriptors and are not single bonds
-    non_bd_single_bonds = {nodes: bond for nodes, bond in atomistic_bonds.items()
-                            if not (check_if_bonding_descriptor(atomistic.nodes[nodes[0]]["symbol"]) or    # Remove bonding descriptors
-                                    check_if_bonding_descriptor(atomistic.nodes[nodes[1]]["symbol"]))
-                            and ("SINGLE" in atomistic.edges[nodes]["bond_type"])    # Keep single bonds
-                           }
-    # Find bonds to be broken
-    break_bond = []
-    # Only break single bonds that connect atoms
-    for key in non_bd_single_bonds:
-    # for key in atomistic_bonds:
-        # If the bond is not a single bond or if it is between a bonding descriptor, do not break
-        # if_is_simple_bond = "SINGLE" in atomistic.edges[key]["bond_type"]
-        # if_any_bd = any([check_if_bonding_descriptor(atomistic.nodes[x]["symbol"]) for x in key])
-        # if (not if_is_simple_bond) or (if_any_bd):
-        #     continue
-        # Find all simple bonds between atoms (not bonding descriptors) to break TODO make it more efficient
-        # path_found = []
-        # Get all paths between the 2 bonded atoms
-        all_paths = nx.all_simple_paths(atomistic, key[0], key[1])
-        # Remove all paths that have bonding descriptors
-        filtered_paths = filter(lambda path: set(path).isdisjoint(bonding_descriptor_list), all_paths)
-        # Count the number of paths found
-        number_of_paths = 0
-        for _ in filtered_paths:
-            number_of_paths += 1
-            if number_of_paths > 1:
-                break
-        # number_of_paths = sum(1 for _ in filtered_paths)
-        # If it only found one path, save bond to be broken later
-        if number_of_paths == 1:
-            break_bond.append(key)
-
-        # for path in nx.all_simple_paths(atomistic, key[0], key[1]):
-        #     desc_found = False
-        #     for node in path:
-        #         if "<" in atomistic_symbols[node] or ">" in atomistic_symbols[node] or "$" in atomistic_symbols[node]:
-        #             desc_found = True
-        #             break
-        #     if not desc_found:    # Add all paths found between the two nodes that do not have a descriptor
-        #         path_found.append(path)
-        # if len(path_found) == 1:    # If there is more than one path, do not break because they are in a ring. Otherwise, break
-        #     break_bond.append(key)
-
-    # Find nodes that are not bonding descriptors
-    non_descriptors = []
-    for key in topology_symbols:
-        if not ("<" in topology_symbols[key] or ">" in topology_symbols[key] or "$" in topology_symbols[key]):
-            non_descriptors.append(topology_ids[key])
-
-    shortest_paths = []
-    for id in non_descriptors:
-        atom = {"1": [], "2": []}
-        for key in atomistic_bonds:
-            # This if statements select the non descriptor nodes (atoms) that are in the RU because it must have
-            # a 1_SINGLE and a 2_SINGLE in the same group
-            if "1" in atomistic_bonds[key] and atomistic_ids[key[0]] == id:
-                atom["1"].append(key[0])
-            elif "1" in atomistic_bonds[key] and atomistic_ids[key[1]] == id:
-                atom["1"].append(key[1])
-            elif "2" in atomistic_bonds[key] and atomistic_ids[key[0]] == id:
-                atom["2"].append(key[0])
-            elif "2" in atomistic_bonds[key] and atomistic_ids[key[1]] == id:
-                atom["2"].append(key[1])
-
-        # For repeating units
-        for start in atom["1"]:
-            for end in atom["2"]:
-                for path in nx.all_simple_paths(atomistic, start, end):
-                    found = True
-                    for node in path:
-                        if atomistic_ids[node] != id:
-                            found = False
-                            break
-                    if found:
-                        shortest_paths.append(path)
-                        break
-
-        # For end groups (if one of the atom list is empty)
-        if atom["1"] == [] or atom["2"] == []:
-            # Get atoms in the group
-            atom_group = [k for k, v in atomistic_ids.items() if v == id]
-            # Get ends of the end group
-            endgroup_ends = get_endgroup_end(atom_group=atom_group, atomistic=atomistic)
-            # If atom["1"] is empty, the start will be an end of the end group and the end will be atom["2"]
-            if atom["1"] == []:
-                start = endgroup_ends
-                end = atom["2"]
-            # If atom["2"] is empty, the start will be atom["1"] and the end will be an end of the end group
-            else:
-                start = atom["1"]
-                end = endgroup_ends
-
-            # Get the longest and heaviest path
-            _path = choose_heaviest_longest_path(start=start, end=end, atomistic=atomistic)
-            shortest_paths.append(_path)
-
-    # Define the bonds that will be broken
-    break_bond_modified = []
-    for bond in break_bond:
-        found = False
-        for path in shortest_paths:  # They will be broken if the nodes are in a path from shortest_paths
-            if bond[0] in path and bond[1] in path:
-                found = True
-                break
-        if found:
-            break_bond_modified.append(bond)
-
-    # add states
-    state_machine = copy.deepcopy(atomistic)
-    state = max(list(nx.get_node_attributes(state_machine, "symbol").keys()))
-    for breaking in break_bond_modified:
-        state += 1
-        state_machine.remove_edge(breaking[0], breaking[1])
-        state_machine.add_node(state)
-        state_machine.add_edge(breaking[0], state)
-        state_machine.add_edge(state, breaking[1])
-
-    # traverse to get directed graph
-    symbols = nx.get_node_attributes(state_machine, "symbol")
-    # Get all bonds from state machine. Assign 0 to bonds with "1" or "2" and 1 to the rest in order to sort
-    bonds = {k: (v, 0 if ("1" in v or "2" in v) else 1)
-             for k, v in nx.get_edge_attributes(state_machine, "bond_type").items()}
-    # Sort bonds so that bonds with "1" or "2" are always checked first. This is essential
-    bonds = sorted(bonds.items(), key=lambda item: item[1][1])
-    # Remove numbers used for sorting
-    bonds = {b[0]: b[1][0] for b in bonds}
-    alphabets = dict()
-    caps = list(string.ascii_uppercase)
-    alpha_count = 0
-    transitions = []
-    checked_nodes = []
-
-    # List of bonding descriptors
-    bonding_descriptor_list = [x for x in symbols.keys() if check_if_bonding_descriptor(symbols[x])]
-    # List of symbols
-    symbol_list = list(symbols.keys())
-    # List of symbols that are not bonding descriptors
-    non_bd_symbol_list = [x for x in symbol_list if x not in bonding_descriptor_list]
-    # Remove edges from nodes that are bonding descriptors or state nodes.
-    # This is done so the code never finds a path with such nodes in-between. This saves a lot of time
-    _state_machine = copy.deepcopy(state_machine)
-    _nodes = copy.deepcopy(_state_machine.nodes())
-    for node in _nodes:
-        # If node is not an atom, remove its edges
-        if node not in non_bd_symbol_list:
-            _edges = copy.deepcopy(_state_machine.edges(node))
-            for e in _edges:
-                _state_machine.remove_edge(e[0], e[1])
-
-    for b in bonds:
-        if "2" in bonds[b]:
-            if "<" in symbols[b[0]] or ">" in symbols[b[0]] or "$" in symbols[b[0]]:
-                start = b[1]
-            else:
-                start = b[0]
-
-            def direction(graph, extracted, start_atom):
-                if start_atom not in extracted:
-                    extracted.append(start_atom)
-                next_atoms = []
-                for n in graph[start_atom]:
-                    if n in symbols and ("<" in symbols[n] or ">" in symbols[n] or "$" in symbols[n]):
-                        continue
-                    if n not in extracted:
-                        extracted.append(n)
-                        next_atoms.append(n)
-                for n in next_atoms:
-                    extracted = direction(graph, extracted, n)
-                return extracted
-
-            extracted = direction(state_machine, [], start)
-
-            # If all atoms in extracted have already been checked, skip them
-            if all([x in checked_nodes for x in extracted]):  # Only do it for nodes that have not been checked yet
-                continue
-
-            # # List of bonding descriptors # TODO moved this out of here to save time
-            # bonding_descriptor_list = [x for x in symbols.keys() if check_if_bonding_descriptor(symbols[x])]
-            # # List of symbols
-            # symbol_list = list(symbols.keys())
-            # # List of symbols that are not bonding descriptors
-            # non_bd_symbol_list = [x for x in symbol_list if x not in bonding_descriptor_list]
-            #
-            # # Remove edges from nodes that are bonding descriptors or state nodes.
-            # # This is done so the code never finds a path with such nodes in-between. This saves a lot of time
-            # _state_machine = copy.deepcopy(state_machine)
-            # _nodes = copy.deepcopy(_state_machine.nodes())
-            # for node in _nodes:
-            #     # If node is not an atom, remove its edges
-            #     if node not in non_bd_symbol_list:
-            #         _edges = copy.deepcopy(_state_machine.edges(node))
-            #         for e in _edges:
-            #             _state_machine.remove_edge(e[0], e[1])
-
-            # Determine the nodes that will be grouped in alphabets
-            alphabet_indices = []
-            for atom in extracted:  # Check what atoms must be grouped into 1 alphabet. This will happen if there are no bonding descriptors or state nodes along the path between 2 atoms
-                group = [atom]
-                for key in symbols:
-                    if "<" in symbols[key] or ">" in symbols[key] or "$" in symbols[key]:
-                        continue
-                    for _ in nx.all_simple_paths(_state_machine, key, atom):    # Check if there is at leat one path between atom and key that does not have a bonding descriptor or state node
-                        group.append(key)
-                        break
-                if atom in symbols and sorted(group) not in alphabet_indices:
-                    alphabet_indices.append(sorted(group))
-            # # Determine the nodes that will be grouped in alphabets
-            # alphabet_indices = []  # TODO THIS IS TAKING TOOOOOOOOO LONG -> TRY JUST CHECKING IF THERE IS AT LEAT ONE PATH WITHOUT BONDING DESCRIPTORS. CREATE A LIST OF NODES THAT ARE BONDING DESCRIPTORS. ELIMINATE ALL PATHS THAT HAVE AN ATOM FROM THAT LIST
-            # for atom in extracted:  # Check what atoms must be grouped into 1 alphabet. This will happen if there are no bonding descriptors or state nodes along the path between 2 atoms
-            #     group = [atom]
-            #     for key in symbols:
-            #         if "<" in symbols[key] or ">" in symbols[key] or "$" in symbols[key]:
-            #             continue
-            #         for path in nx.all_simple_paths(state_machine, key, atom):    # Check if there is at leat one path between atom and key that does not have a bonding descriptor or state nde
-            #             valid = True
-            #             for p in path:
-            #                 if p in symbols and ("<" in symbols[p] or ">" in symbols[p] or "$" in symbols[p]):
-            #                     valid = False
-            #                     break
-            #                 if p not in symbols:
-            #                     valid = False
-            #                     break
-            #             if valid:
-            #                 group.append(key)
-            #                 break
-            #     if atom in symbols and sorted(group) not in alphabet_indices:
-            #         alphabet_indices.append(sorted(group))
-            # for atom in extracted:  # Check what atoms must be grouped into 1 alphabet. This will happen if there are no bonding descriptors or state nodes along the path between 2 atoms
-            #     group = [atom]
-            #     # Get the path between atom and each other atom (key) of the graph. If there is at least a bonding descriptor
-            #     # or a node that represents a state in it, atom and key must not be grouped
-            #     for key in non_bd_symbol_list:
-            #         # Get all paths
-            #         all_paths = nx.all_simple_paths(state_machine, key, atom)
-            #         # Remove paths that have bonding descriptors and whose nodes are not in symbols
-            #         filtered_paths = filter(lambda path: set(path).issubset(non_bd_symbol_list), all_paths)
-            #         # If no paths were removed, add key to group. Otherwise, do not add
-            #         # if sum(1 for _ in all_paths) == sum(1 for _ in filtered_paths):    # Although this looks strange, it is the fastest way of getting the length of an iterator
-            #         #     group.append(key)
-            #         # If there is at least one remaining path, add key to group
-            #         if sum(1 for _ in filtered_paths) != 0:
-            #             group.append(key)
-            #     if atom in symbols and sorted(group) not in alphabet_indices:
-            #         alphabet_indices.append(sorted(list(set(group))))    # Remove duplicates (necessary), sort and add to alphabet_indices
-
-            for group in alphabet_indices:  # For each group of atoms (atoms that will be grouped into one alphabet)
-                symbols = nx.get_node_attributes(state_machine, "symbol")
-                formal_charge = nx.get_node_attributes(state_machine, "formal_charge")
-                is_aromatic = nx.get_node_attributes(state_machine, "is_aromatic")
-                bonds_object = nx.get_edge_attributes(state_machine, "bond_type_object")
-
-                terminals = []
-                for key in group:  # Get the terminals of the group (alphabet), which will connect to bonding descriptors or states
-                    for neighbor in state_machine[key]:
-                        if neighbor not in symbols:
-                            terminals.append([key, neighbor])
-                        elif "<" in symbols[neighbor] or ">" in symbols[neighbor] or "$" in symbols[neighbor]:
-                            terminals.append([key, neighbor, bonds[tuple(sorted([neighbor, key]))]])
-
-                # Sort elements to indicate which will be input and output
-                _terminals = copy.deepcopy(terminals)
-                for i in range(len(terminals)):
-                    to_end = -1
-                    to_beginning = -1
-                    if len(terminals[i]) == 3 and "1" in terminals[i][2]:
-                        to_end = terminals[i]
-                    elif len(terminals[i]) == 3 and "2" in terminals[i][2]:
-                        to_beginning = terminals[i]
-                    if to_end != -1:
-                        _terminals.append(_terminals.pop(_terminals.index(to_end)))
-                    elif to_beginning != -1:
-                        _terminals.insert(0, _terminals.pop(_terminals.index(to_beginning)))
-                terminals = _terminals
-
-                ends = dict()
-                for i in range(len(terminals)):
-                    if len(terminals[i]) == 3 and i == 0:
-                        ends[tuple(terminals[i])] = -1
-                    elif len(terminals[i]) == 3 and i != 0:  # == len(terminals) - 1:
-                        ends[tuple(terminals[i])] = 10000
-                    else:
-                        ends[tuple(terminals[i])] = extracted.index(terminals[i][1])
-                ends = sorted(ends.items(), key=lambda item: item[1])
-                terminals = []
-                for e in ends:
-                    terminals.append(e[0])
-                left = terminals[0][0]
-                left_states = terminals[0][1]
-                right = []
-                right_states = []
-                for i in range(1, len(terminals)):
-                    right.append(terminals[i][0])
-                    right_states.append(terminals[i][1])
-
-                #### Generate SMILES representations of the alphabets --------------------------------------------------
-                # Initialize an empty molecule
-                mol = Chem.RWMol()
-                node_to_idx = {}
-                # This will define the index associated to Bk
-                count = 2
-                # This will define how the input will be sorted
-                heavyatom_node_dict = {}
-                # for node in state_machine.nodes():
-                #     if node in group:
-                #         if node in symbols and not (
-                #                 "<" in symbols[node] or ">" in symbols[node] or "$" in symbols[node]):
-                #             atom = Chem.Atom(symbols[node])
-                #             atom.SetFormalCharge(formal_charge[node])
-                #             atom.SetIsAromatic(is_aromatic[node])
-                #             idx = mol.AddAtom(atom)
-                #             node_to_idx[node] = idx
-                #         if node == left:
-                #             end1 = Chem.Atom("Bk")
-                #             end1.SetAtomMapNum(1)    # Sets the number the Bk atom is associated with
-                #             idx2 = mol.AddAtom(end1)
-                #             mol.AddBond(idx, idx2, rdkit.Chem.rdchem.BondType.SINGLE)
-                #         for r in right:
-                #             if node == r:
-                #                 end2 = Chem.Atom("Cf")
-                #                 end2.SetAtomMapNum(count)    # Sets the number the Bk atom is associated with
-                #                 count += 1
-                #                 idx2 = mol.AddAtom(end2)
-                #                 mol.AddBond(idx, idx2, rdkit.Chem.rdchem.BondType.SINGLE)
-                # First, add the atoms that correspond to the inputs. This guarantees that the indices associated
-                # with Bk's will be smaller for the inputs than for the output
-                for node in state_machine.nodes():
-                    if node in group:
-                        if node in symbols and not (
-                                "<" in symbols[node] or ">" in symbols[node] or "$" in symbols[node]):
-                            atom = Chem.Atom(symbols[node])
-                            atom.SetFormalCharge(formal_charge[node])
-                            atom.SetIsAromatic(is_aromatic[node])
-                            idx = mol.AddAtom(atom)
-                            node_to_idx[node] = idx
-                        for r in right:
-                            if node == r:
-                                # Add to node_order so that we can sort the input later
-                                heavyatom_node_dict[f"Cf:{count}"] = node
-                                end2 = Chem.Atom("Cf")
-                                end2.SetAtomMapNum(count)    # Sets the number the Bk atom is associated with
-                                count += 1
-                                idx2 = mol.AddAtom(end2)
-                                mol.AddBond(idx, idx2, rdkit.Chem.rdchem.BondType.SINGLE)
-                        if node == left:
-                            # Add to node_order so that we can sort the input later
-                            heavyatom_node_dict[f"Bk:{1}"] = node
-                            end1 = Chem.Atom("Bk")
-                            end1.SetAtomMapNum(1)    # Sets the number the Bk atom is associated with to 1 so it is always the first
-                            idx2 = mol.AddAtom(end1)
-                            mol.AddBond(idx, idx2, rdkit.Chem.rdchem.BondType.SINGLE)
-
-                # Add missing bonds to the molecule
-                already_added = set()
-                for edge in state_machine.edges():
-                    first, second = edge
-                    if first in group and second in group:
-                        ifirst = node_to_idx[first]
-                        isecond = node_to_idx[second]
-                        b = bonds_object[first, second]
-                        if tuple(sorted([ifirst, isecond])) not in already_added:
-                            mol.AddBond(ifirst, isecond, b)
-                            already_added.add(tuple(sorted([ifirst, isecond])))
-
-                # Generate the SMILES representation
-                Chem.SanitizeMol(mol)
-                smiles = Chem.MolToSmiles(mol)
-
-                #### Sort inputs based on the index of the heavy atoms in the string
-                # Create a dict whose keys are the heavy atoms and values are their positions in the string
-                heavyatom_position = {heavy: smiles.find(heavy) for heavy, _ in heavyatom_node_dict.items()}
-                # Sort based on their position
-                heavyatom_position = dict(sorted(heavyatom_position.items(), key=lambda item: item[1]))
-
-                # Sort heavyatom_node_dict based on the positions of the heavy atoms in the string
-                heavyatom_node_dict = dict(sorted(heavyatom_node_dict.items(),
-                                                  key=lambda item: heavyatom_position[item[0]],
-                                                  reverse=True))    # Reverse because I want to assign weights to lowest priority first
-                # Dictionary that will define the positions of the inputs
-                weights = {}
-                # Sort right states because, if all weights are the same, it does not change
-                right_states = sorted(right_states)
-                # Loop over the heavy atoms and assign weights to inputs based on the positions of the heavy atoms
-                count = 0
-                for heavy_atom, heavy_node in heavyatom_node_dict.items():
-                    # Only choose Cf because they represent inputs
-                    if "Cf" in heavy_atom:
-                        # Get all neighbors
-                        _neighbors = find_neighbors(state_machine, heavy_node)
-                        # If any node in the input is a neighbor, assign weight
-                        for n in right_states:
-                            if n in _neighbors:
-                                weights[n] = count
-                                # sorted_input.append(n)
-                                # break
-                    # Update count
-                    count += 1
-                # Finally sort input
-                right_states = sorted(right_states, key=lambda x: weights[x])
-
-                # Replace heavy atoms by *
-                smiles = smiles.replace("[Bk:", "[*:")
-                smiles = smiles.replace("[Cf:", "[*:")
-
-                #### Add transitions to tree automaton -----------------------------------------------------------------
-                # Sort inputs as they appear in the smiles
-                if smiles in alphabets:
-                    transitions.append([left_states, alphabets[smiles], smiles, right_states])
-                else:
-                    # If it is a starting Es transition, add id to distinguish
-                    if "Es_id" in atomistic.nodes[group[0]].keys():
-                        _id = str(atomistic.nodes[group[0]]["Es_id"])
-                        smiles = smiles.replace("Es", f"Es_{_id}")
-                    alphabets[smiles] = caps[alpha_count]
-                    alpha_count += 1
-                    transitions.append([left_states, alphabets[smiles], smiles, right_states])
-
-            # Update list of nodes that were checked
-            checked_nodes = checked_nodes + extracted
-
-    for b in bonds:
-        if "<" in symbols[b[0]] or ">" in symbols[b[0]] or "$" in symbols[b[0]]:
-            start = b[1]
-        else:
-            start = b[0]
-
-        extracted = direction(state_machine, [], start)
-
-        if not all([x in checked_nodes for x in extracted]):  # Only do it for nodes that have not been checked yet
-            # List of bonding descriptors
-            # bonding_descriptor_list = [x for x in symbols.keys() if check_if_bonding_descriptor(symbols[x])]
-            # # List of symbols
-            # symbol_list = list(symbols.keys())
-            # # List of symbols that are not bonding descriptors
-            # non_bd_symbol_list = [x for x in symbol_list if x not in bonding_descriptor_list]
-            #
-            # # Remove edges from nodes that are bonding descriptors or state nodes.
-            # # This is done so the code never finds a path with such nodes in-between. This saves a lot of time
-            # _state_machine = copy.deepcopy(state_machine)
-            # _nodes = copy.deepcopy(_state_machine.nodes())
-            # for node in _nodes:
-            #     # If node is not an atom, remove its edges
-            #     if node not in non_bd_symbol_list:
-            #         _edges = copy.deepcopy(_state_machine.edges(node))
-            #         for e in _edges:
-            #             _state_machine.remove_edge(e[0], e[1])
-
-            # Determine the nodes that will be grouped in alphabets
-            alphabet_indices = []
-            for atom in extracted:  # Check what atoms must be grouped into 1 alphabet. This will happen if there are no bonding descriptors or state nodes along the path between 2 atoms
-                group = [atom]
-                for key in symbols:
-                    if "<" in symbols[key] or ">" in symbols[key] or "$" in symbols[key]:
-                        continue
-                    for _ in nx.all_simple_paths(_state_machine, key,
-                                                 atom):  # Check if there is at leat one path between atom and key that does not have a bonding descriptor or state node
-                        group.append(key)
-                        break
-                if atom in symbols and sorted(group) not in alphabet_indices:
-                    alphabet_indices.append(sorted(group))
-            # alphabet_indices = []
-            # for atom in extracted:
-            #     group = [atom]
-            #     for key in symbols:
-            #         if "<" in symbols[key] or ">" in symbols[key] or "$" in symbols[key]:
-            #             continue
-            #         for path in nx.all_simple_paths(state_machine, key, atom):
-            #             valid = True
-            #             for p in path:
-            #                 if p in symbols and ("<" in symbols[p] or ">" in symbols[p] or "$" in symbols[p]):
-            #                     valid = False
-            #                     break
-            #                 if p not in symbols:
-            #                     valid = False
-            #                     break
-            #             if valid:
-            #                 group.append(key)
-            #                 break
-            #     if atom in symbols and sorted(group) not in alphabet_indices:
-            #         alphabet_indices.append(sorted(group))
-
-            for group in alphabet_indices:
-                symbols = nx.get_node_attributes(state_machine, "symbol")
-                formal_charge = nx.get_node_attributes(state_machine, "formal_charge")
-                is_aromatic = nx.get_node_attributes(state_machine, "is_aromatic")
-                bonds_object = nx.get_edge_attributes(state_machine, "bond_type_object")
-
-                terminals = []
-                for key in group:
-                    for neighbor in state_machine[key]:
-                        if neighbor not in symbols:
-                            terminals.append([key, neighbor])
-                        elif "<" in symbols[neighbor] or ">" in symbols[neighbor] or "$" in symbols[neighbor]:
-                            terminals.append([key, neighbor, bonds[tuple(sorted([neighbor, key]))]])
-
-                # Sort elements to indicate which will be input and output
-                _terminals = copy.deepcopy(terminals)
-                for i in range(len(terminals)):
-                    to_end = -1
-                    to_beginning = -1
-                    if len(terminals[i]) == 3 and "1" in terminals[i][2]:
-                        to_end = terminals[i]
-                    elif len(terminals[i]) == 3 and "2" in terminals[i][2]:
-                        to_beginning = terminals[i]
-                    if to_end != -1:
-                        _terminals.append(_terminals.pop(_terminals.index(to_end)))
-                    elif to_beginning != -1:
-                        _terminals.insert(0, _terminals.pop(_terminals.index(to_beginning)))
-                terminals = _terminals
-
-                ends = dict()
-                reverse_extracted = copy.deepcopy(extracted)
-                reverse_extracted.reverse()
-                for i in range(len(terminals)):
-                    if len(terminals[i]) == 3 and i == 0:
-                        ends[tuple(terminals[i])] = -1
-                    elif len(terminals[i]) == 3 and i != 0:
-                        ends[tuple(terminals[i])] = 10000
-                    else:
-                        ends[tuple(terminals[i])] = reverse_extracted.index(terminals[i][1])
-                ends = sorted(ends.items(), key=lambda item: item[1])
-                terminals = []
-                for e in ends:
-                    terminals.append(e[0])
-                left = terminals[0][0]
-                left_states = terminals[0][1]
-                right = []
-                right_states = []
-                for i in range(1, len(terminals)):
-                    right.append(terminals[i][0])
-                    right_states.append(terminals[i][1])
-
-                mol = Chem.RWMol()
-                node_to_idx = {}
-                count = 2
-                for node in state_machine.nodes():
-                    if node in group:
-                        if node in symbols and not (
-                                "<" in symbols[node] or ">" in symbols[node] or "$" in symbols[node]):
-                            atom = Chem.Atom(symbols[node])
-                            atom.SetFormalCharge(formal_charge[node])
-                            atom.SetIsAromatic(is_aromatic[node])
-                            idx = mol.AddAtom(atom)
-                            node_to_idx[node] = idx
-                        if node == left:
-                            end1 = Chem.Atom("Bk")
-                            end1.SetAtomMapNum(1)
-                            idx2 = mol.AddAtom(end1)
-                            mol.AddBond(idx, idx2, rdkit.Chem.rdchem.BondType.SINGLE)
-                        for r in right:
-                            if node == r:
-                                end2 = Chem.Atom("Cf")
-                                end2.SetAtomMapNum(count)
-                                count += 1
-                                idx2 = mol.AddAtom(end2)
-                                mol.AddBond(idx, idx2, rdkit.Chem.rdchem.BondType.SINGLE)
-
-                already_added = set()
-                for edge in state_machine.edges():
-                    first, second = edge
-                    if first in group and second in group:
-                        ifirst = node_to_idx[first]
-                        isecond = node_to_idx[second]
-                        b = bonds_object[first, second]
-                        if tuple(sorted([ifirst, isecond])) not in already_added:
-                            mol.AddBond(ifirst, isecond, b)
-                            already_added.add(tuple(sorted([ifirst, isecond])))
-
-                Chem.SanitizeMol(mol)
-                smiles = Chem.MolToSmiles(mol)
-                smiles = smiles.replace("[Bk:", "[*:")
-                smiles = smiles.replace("[Cf:", "[*:")
-                if len(ends) == 1:  # TODO check this. I did this bc sometimes the last transition is pointing the wrong way
-                    right = [terminals[0][0]]
-                    right_states = [terminals[0][1]]
-                    left = []
-                    left_states = []
-                if smiles in alphabets:
-                    # Swap left and right
-                    transitions.append([left_states, alphabets[smiles], smiles, right_states])
-                else:
-                    # If it is a starting Es transition, add id to distinguish
-                    if "Es_id" in atomistic.nodes[group[0]].keys():
-                        _id = str(atomistic.nodes[group[0]]["Es_id"])
-                        smiles = smiles.replace("Es", f"Es_{_id}")
-                    alphabets[smiles] = caps[alpha_count]
-                    alpha_count += 1
-                    # Swap left and right
-                    transitions.append([left_states, alphabets[smiles], smiles, right_states])
-
-                # Update list of nodes that were checked
-                checked_nodes = checked_nodes + extracted
-
-    # Adding initial transitions to bonding descriptors TODO added this to avoid assigning bond types to Es
-    es_id = 0
-    for bd in starting_bonding_descriptors:
-        smiles = f"[Es_{es_id}][*]"
-        alphabets[smiles] = caps[alpha_count]
-        new_transition = [bd, alphabets[smiles], smiles, []]
-        transitions.append(new_transition)
-        es_id += 1
-        alpha_count += 1
-
-    # Swap left and right to convert into bottom-up tree automata
-    table = pd.DataFrame(transitions, columns=['output', 'alphabet', 'smiles', 'input'])
-
-    # Take index of the maximum state
-    max_state = 0
-    for i, row in table.iterrows():
-        # If input is a list, take the maximum value
-        if not row["input"]:
-            candidate = 0
-        elif type(row["input"]) == list:
-            candidate = max(row["input"])
-        else:
-            candidate = row["input"]
-        # If output is a list, take the maximum value
-        if not row["output"]:
-            candidate2 = 0
-        elif type(row["output"]) == list:
-            candidate2 = max(row["output"])
-        else:
-            candidate2 = row["output"]
-        # If output (candidate2) is grater than input (candidate), candidate will be the output
-        if candidate2 > candidate:
-            candidate = candidate2
-        # If candidate is greater than max_state, max state will get cadidate's value
-        if candidate > max_state:
-            max_state = candidate
-
-    # Cap uncapped transitions
-    final_states = ending_bonding_descriptors
-    max_state += 1
-    for i, row in table.iterrows():
-        if not row["output"]:
-            # Add an output state
-            table.loc[i, "output"] = max_state
-            final_states.append(max_state)
-            # In these cases, the alphabet only has one input that has index *:1. We need to replace it by :*2
-            table.loc[i, "smiles"] = table.loc[i, "smiles"].replace("*:1", "*:2")
-            max_state += 1
-
-    return final_states, table
-
 
 def check_if_bonding_descriptor(symbol: str) -> bool:
     """
@@ -2574,7 +1905,7 @@ def atomistic_to_transitions(bigsmarts_graphs):
     # Replace empty symbols ("") by Es
     for n in atomistic_graph.nodes:
         if atomistic_graph.nodes[n]["symbol"] == "":
-            atomistic_graph.nodes[n]["symbol"] = "Es"    # TODO add brackets?
+            atomistic_graph.nodes[n]["symbol"] = "Es"
 
     # Get topology graph
     topology_graph = bigsmarts_graphs["topology"]
@@ -2889,6 +2220,23 @@ def save_bigsmiles_file(original_bigsmiles, canonical_bigsmiles, bigsmiles_list,
             if bg != canonical_bigsmiles:
                 f.write(f"{bg}\n")
 
+def integer_to_letter(n):
+    """
+    This function converts an integer into a letter
+    Args:
+        n: integer
+
+    Returns: letter
+
+    """
+    quotient = n // 26
+    remainder = n % 26
+    letter = chr(remainder + ord('A'))
+
+    if quotient > 0:
+        return chr(ord('A') + quotient - 1) + letter
+    else:
+        return letter
 
 def canonicalize_bigsmiles(bigsmiles, output_folder="Output", plot=False):
     """
@@ -2913,9 +2261,17 @@ def canonicalize_bigsmiles(bigsmiles, output_folder="Output", plot=False):
     bigsmiles_list = []
     for end_states, transition_table, _, atomistic_graph in transitions:
 
-        # # Unify starting transitions with the same alphabet TODO did this today
-        # transition_table['smiles'] = transition_table['smiles'].str.replace(r'_\d+', '', regex=True)
-        # transition_table["alphabet"] = transition_table.groupby("smiles")["alphabet"].transform("first")
+        # Unify starting transitions with the same alphabet
+        # Remove _n from SMILES
+        transition_table['smiles'] = transition_table['smiles'].str.replace(r'_\d+', '', regex=True)
+        # Give same alphabet to transitions with the same SMILES
+        transition_table["alphabet"] = transition_table.groupby("smiles")["alphabet"].transform("first")
+        # Create a list of all alphabets
+        alphabets = list(set(transition_table["alphabet"]))
+        # Replace alphabet by the position of this alphabet in the list of alphabets
+        transition_table['alphabet'] = transition_table['alphabet'].apply(lambda x: alphabets.index(x))
+        # Convert alphabets into letters
+        transition_table["alphabet"] = transition_table["alphabet"].apply(integer_to_letter)
 
         # Create a folder for each tree
         _output_folder = output_folder + f"\\Tree_{index}\\"
@@ -2936,7 +2292,7 @@ def canonicalize_bigsmiles(bigsmiles, output_folder="Output", plot=False):
         # Add to list of BigSMILES
         bigsmiles_list.append(_bigsmiles)
 
-        # Save BigSMILES to text file TODO did this today
+        # Save BigSMILES to text file
         with open(os.path.join(_output_folder, "Canonical_BigSMILES.txt"), "w") as f:
             # Write initial BigSMILES
             f.write(f"Initial: {bigsmiles} \n")
@@ -2956,65 +2312,168 @@ def canonicalize_bigsmiles(bigsmiles, output_folder="Output", plot=False):
 
     return canonical_bigsmiles
 
+def canonicalization_unit_testing(sheet_name):
+    data = pd.read_excel("Canonicalization_Validation.xlsx", sheet_name = sheet_name)
+    data = data.fillna(0)
+    queries = list(data.columns)[5:][0:]
+    canonicalized = list(data["Canonicalized"][3:])
+    for i in range(len(queries)):
+        try:
+            print("Query: ", queries[i])
+            q = canonicalize_bigsmiles(queries[i])
+            actual = list(data[queries[i]][3:])
+            for j in range(len(canonicalized)):
+                if j % 50 == 0:
+                    print("# of targets checked: " + str(j) + "/" + str(len(canonicalized)))
+                predicted = canonicalized[j] == q
+                if predicted != actual[j]:
+                    print("Incorrect: ", j)
+        except:
+            print("ERROR")
+
+
+def canonicalize_polyelectrolyte(bigsmiles, output_folder, plot):
+    ion = bigsmiles[bigsmiles.find(".[") + 1:]
+    ion = ion[:ion.find("]") + 1]
+    bigsmiles = bigsmiles.replace(ion, "")
+    bigsmiles = bigsmiles.replace(".", "")
+    canonical = canonicalize_bigsmiles(bigsmiles, output_folder, plot)
+    canonical = canonical[0:-3] + "." + ion + "[]}"
+    return canonical
 
 # Main -----------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
 
-    # Read validation dataset
-    filename = "Validation"  # "Same polymer many notations"    #  "Validation_tacticity" #
-    ext = ".xlsx"
-    dataset = pd.read_excel(filename + ext)
+    # # Read validation dataset
+    # filename = "Validation"  #"Same polymer many notations" #
+    # ext = ".xlsx"
+    # dataset = pd.read_excel(filename + ext)
+    #
+    # output_folder = f"Paper-Results\\Excel\\{filename}"
+    # duration_list = []
+    # # If directory does not exist, create it
+    # try:
+    #     os.makedirs(output_folder)
+    # except:
+    #     pass
+    # for index, row in dataset.iterrows():
+    #     try:
+    #         print(f"Canonicalizing row {index}")
+    #         start = datetime.datetime.now()
+    #
+    #         subfolder_name = f"{index}"
+    #         bigsmiles = row["Input"]
+    #         canonical = canonicalize_bigsmiles(bigsmiles=bigsmiles,
+    #                                            output_folder=os.path.join(output_folder, subfolder_name),
+    #                                            plot=True)
+    #         dataset.loc[index, "Canonical"] = canonical
+    #         # Calculate duration
+    #         end = datetime.datetime.now()
+    #         duration = (end - start).seconds
+    #         duration_list.append([bigsmiles, canonical, duration])
+    #     except Exception as exc:
+    #         print(f"Error index {index}")
+    #         print(exc)
+    #     # Save answers
+    #     dataset.to_excel(os.path.join(output_folder, filename + ext))
+    #     # Save duration
+    #     df_duration = pd.DataFrame(duration_list, columns=["Input", "Canonical", "Duration (s)"])
+    #     df_duration.to_excel(os.path.join(output_folder, "Duration.xlsx"))
+    #
+    # # Save answers
+    # dataset.to_excel(os.path.join(output_folder, filename + ext))
+    # # Save duration
+    # df_duration = pd.DataFrame(duration_list, columns=["Input", "Canonical", "Duration (s)"])
+    # df_duration.to_excel(os.path.join(output_folder, "Duration.xlsx"))
 
-    # Indices to check because there is an error
-    to_check = 400
-
-    output_folder = f"Paper-Results\\Atoms_Can_Have_Many_BD\\Excel\\{filename}"
-    duration_list = []
-    # If directory does not exist, create it
-    try:
-        os.makedirs(output_folder)
-    except:
-        pass
-    for index, row in dataset.iterrows():
-        try:
-            print(f"Canonicalizing row {index}")
-            start = datetime.datetime.now()
-            # if index != to_check:
-            #     continue
-            subfolder_name = f"{index}"
-            bigsmiles = row["Input"]
-            canonical = canonicalize_bigsmiles(bigsmiles=bigsmiles,
-                                               output_folder=os.path.join(output_folder, subfolder_name),
-                                               plot=True)
-            dataset.loc[index, "Canonical"] = canonical
-            # Calculate duration
-            end = datetime.datetime.now()
-            duration = (end - start).seconds
-            duration_list.append([bigsmiles, canonical, duration])
-        except Exception as exc:
-            print(f"Error index {index}")
-            print(exc)
-        # Save answers
-        dataset.to_excel(os.path.join(output_folder, filename + ext))
-        # Save duration
-        df_duration = pd.DataFrame(duration_list, columns=["Input", "Canonical", "Duration (s)"])
-        df_duration.to_excel(os.path.join(output_folder, "Duration.xlsx"))
-
-    # Save answers
-    dataset.to_excel(os.path.join(output_folder, filename + ext))
-    # Save duration
-    df_duration = pd.DataFrame(duration_list, columns=["Input", "Canonical", "Duration (s)"])
-    df_duration.to_excel(os.path.join(output_folder, "Duration.xlsx"))
+    # # Read validation dataset
+    # filename = "Canonicalization_Validation" #"Validation_dataset"  #   "Validation_dataset_second_canonicalization" # "Same polymer many notations"    # "Validation_tacticity" #
+    # ext = ".xlsx"
+    # dataset = pd.read_excel(filename + ext)
+    #
+    # # Indices to check because there is an error
+    # to_check = [435, 436, 437, 438, 439, 445, 446, 447, 448] #[401, 422, 423, 461, 462, 463, 464, 465, 475] # []#[443]#  [436, 437, 438, 471, 478, 487, 488, 489] #[22, 35, 48, 53, 58, 77, 101, 111, 120, 129, 137, 140, 142, 166, 171, 196, 197, 202, 208, 209, 212, 213, 214, 216, 219, 220, 222, 225, 231, 232, 233, 234, 236, 237, 238, 242, 246, 247, 248, 249, 250, 251, 252, 253, 255, 256, 258, 260, 261, 262, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 305, 364, 367, 399, 416, 417, 418, 419, 428, 431, 432, 434, 435] #[439, 440, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 466, 467, 468, 469, 470, 472, 473, 474, 476, 477, 479, 480, 481, 482, 483, 484, 485, 486, 490, 491, 492]#[22, 35, 48, 53, 58, 77, 101, 111, 120, 129, 137, 140, 142, 166, 171, 196, 197, 202, 208, 209, 212, 213, 214, 216, 219, 220, 222, 225, 231, 232, 233, 234, 236, 237, 238, 242, 246, 247, 248, 249, 250, 251, 252, 253, 255, 256, 258, 260, 261, 262, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 305, 364, 367, 399, 419, 428, 431, 432, 434, 435, 436, 437, 438, 439, 440, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 466, 467, 468, 469, 470, 471, 472, 473, 474, 476, 477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492] #[401, 422, 423, 441] #[306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 317, 320, 321, 322, 323, 325, 326, 327, 328, 329, 330, 331, 332, 333, 408, 414, 423, 441, 449, 455, 456, 457, 458, 461, 462, 463, 464, 465, 472, 475, 483, 492] #
+    #
+    # output_folder = f"Validation\\Validation_54\\Excel_Dataset\\{filename}"
+    # # If directory does not exist, create it
+    # try:
+    #     os.makedirs(output_folder)
+    # except:
+    #     pass
+    # for index, row in dataset.iterrows():
+    #     try:
+    #         if index in to_check or index < 344: #or index < 404:
+    #             continue
+    #         subfolder_name = f"{index}"
+    #         bigsmiles = row["Input"]
+    #         canonical = canonicalize_bigsmiles(bigsmiles=bigsmiles,
+    #                                            output_folder=os.path.join(output_folder, subfolder_name),
+    #                                            plot=True)
+    #         dataset.loc[index, "Canonical"] = canonical
+    #     except Exception as exc:
+    #         print(f"Error index {index}")
+    #         print(exc)
+    #     # Save answers
+    #     dataset.to_excel(os.path.join(output_folder, filename + ext))
+    #
+    # # Save answers
+    # dataset.to_excel(os.path.join(output_folder, filename + ext))
 
 
     validation_set = [
-        ["Dendrimer", "{[][>]CCN([<])[<][]}"],
-        # ["hyperbranched", "{[][$]CC[$],[$]CC([$])[$][]}"]
+        # ["chirality1", "{[][<]C[C@@H](C)[>][]}"],
+        # # ["polyelectrolyte", "{[][$]CC(C)(C(=O)[O-])[$].[Na+][]}"],
+        # ["macrocycle", "C1C{[$][$]CC(c1ccccc1)[$][$]}CCCNC(=O)C1"],
+        # ["Block with initiator", "CCC(C){[$][$]CC(c1ccccc1)[$][$]}CCO{[>][<]CC(C)OC(=O)O[>][<]}[H]"],
+        # ["12-a", "CCO{[>][<]CCO[>][<]}CCO"],
+        # ["12-b", "{[][$]CC[$],[$]CC(CC)[$][]}"],
+        # ["12-c", "{[][<]CCO[>][<]}CCO{[$][$]CC(c1ccccc1)[$][]}"],
+        # ["13-a", "{[][<]N=Cc(cc1)ccc1C=NCCC[Si]O{[<][>][Si]O[<][>]}[Si]CCC[>][]}"],
+        # ["13-b", "COCCO{[>][<]C(O{[<][>]CCO[<][>]}C)CCCCCO[>],[<]C(=O)CCCCCO[>][<]}"],
+        # ["14-a", "C([#Arm])([#Arm])([#Arm])[#Arm].{#Arm=CO{[<][>]CCO[<][>]}}"],
+        # ["14-b", "{[][<]C(=O)CC(=O)[<],[>]OCC(CO[>])CO[>][]}"],
+        # ["15-a", "{[>][<]CCO[>][<]}"],
+        # ["one_atom_backbone", "{[>][<]CC[>3],[<3]O[>][<]}"],
+        # ["test_new_explicit_atom_ids", "{[>][<]C[>][<]}N{[>][<]O[>][<]}"],
+        # ["test_many_descriptors_2", "N([#R])([#R])CCCCN([#R])([#R]).{#R={[>][<]CCCN([>])([>])[]}}"],
+        # ["test_many_descriptors", "{[][$]CC([$])[$][]}"],
+        # ["jiale_test", "{[]O=C3c2cc1C(=O)C(N[<])C(=O)c1cc2C(=O)C3N[<],[>]CC[>][]}"],
+        # ["jiale_test2", "{[]O=C3c2cc1C(=O)C(N[<])C(=O)c1cc2C(=O)C3NCC[>][]}"],
+        # ["jiale_test3", "{[>]O=C3c2cc1C(=O)C(N[<])C(=O)c1cc2C(=O)C3N[<],[>]CC[>][<]}"],
+        # ["jiale_test4", "{[>]O=C3c2cc1C(=O)C(N[<])C(=O)c1cc2C(=O)C3NCC[>][<]}"],
+        # ["jiale_test5", "{[>]O=C3c2cc1C(=O)C(N[<])C(=O)c1cc2C(=O)C3N[<],[>]CC(C)[>][<]}"],
+        # ["jiale_test6", "{[>]O=C3c2cc1C(=O)C(N[<])C(=O)c1cc2C(=O)C3NCC(C)[>][<]}"],
+        # ["test_many_descriptors", "{[][$]CC([$])[$][]}"],
+        # ["testing_rings", "C(C(=O)O)(SC(=S)c1ccccc1)CC(=O)OCCO{[>][<]CCO[>][<]}CCOC(=O)CC(C(=O)O)(SC(=S)c1ccccc1)"],
+        # ["weird_end_group", "C{[<][>]OCC[<][>]}OC(=O)C=C "],
+        # ["weird_end_group2", "[H]CO{[<][>]CCO[<][>]}C(=O)C=C"],
+        # ["test_ring", "*CC{[$][$]CC(c1ccccc1)[$][$]}CCCNC(=O)C*"],
+        # ["Collapsed_bonding_descriptor", "{[][>4]C(=O)NC(CC1)CCC1CC(CC1)CCC1NC(=O)[<3],[>4]C(=O)NC(CC1)CCC1CC(CC1)CCC1NC(=O)[<1],[>3]NCCC[Si](C)(C){[<][>]O[Si](C)(C)[<][>]}CCCN[<1],[>3]NCCC[Si](C)(C){[<][>]O[Si](C)(C)[<][>]}CCCN[<4][]}"],
+        # ["star_that_blew_up", "CC([#R])([#R])([#R]).{#R=c(cc1)ccc1OC(=O)C(CO{[>][<]C(=O)C(C)O[>][<]})(CO{[>][<]C(=O)C(C)O[>][<]})C}"],
+        # ["test_atomistic_graph", "[H]{[>1][>2]CC[<1],[>3]OO[<2],[>2]SS[<3],[>3]NN[<1][]}"],
+        # ["test_linear", "CCO{[>][<]CCO[>][<]}CCO"],
+        # ["test_statistical", "{[][$]CC[$],[$]CC(CC)[$][]}"],
+        # ["test_alternating", "{[][<]Nc1ccc(cc1)N[<],[>]C(=O)c1ccc(cc1)C(=O)[>][]}"],
+        # ["test_segmented", "{[][<]N=Cc(cc1)ccc1C=NCCC[Si]O{[<][>][Si]O[<][>]}[Si]CCC[>][]}"],
+        # ["test_diblock", "{[][<]CCO[>][<]}CCO{[$][$]CC(c1ccccc1)[$][]}"],
+        # ["test_graft", "COCCO{[>][<]C(O{[<][>]CCO[<][>]}C)CCCCCO[>],[<]C(=O)CCCCCO[>][<]}"],
+        # ["test_network", "{[][$]CC=CC[$],[$]CC([<])C([<])C[$],[>]{[$][$]SS[$][$]}[>][]}"],
+        # ["test_dendrimer", "{[][>]C(=O)CCN(CCN[<])CCC(=O)[>][]}"],
+        # ["test_star", "C([#Arm])([#Arm])([#Arm])[#Arm].{#Arm=CO{[<][>]CCO[<][>]}}"],
+        # ["test_network2", "{[][<]C(=O)CCC(=O)[<],[>]OCCC(O[>])CO[>][]}"],
+        # ["test_network3", "{[][<]C(=O)CC(=O)[<],[>]OCC(CO[>])CO[>][]}"],
+        # ["test_star2", "OCCCCCC(=O){[>][<]OCCCCCC(=C)[>][<]}OCc1cc([#Arm1])cc([#Arm2])c1.{#Arm1=c2nnn(CC{[$][$]CC(c3ccccc3)[$][$]}CCC)c2}.{#Arm2=c4nnn({[>][<]CCO[>][<]}C)c4}"],
         # ["test_dendrimer", "{[][>2]C(=O)CC(=O)[<1],[>3]OCC(CO[<2])CO[<2],[>2]C(=O)CC(=O)[<3],[>3]OCC(CO[<1])CO[<1][>1]}"],
+        # ["test_block", "{[][<]OO[>][>]}{[>][<]CC[>][]}"],
         # ["test_dendrimer", "{[][>2]C(=O)CC(=O)[<2],[>3]OCC(CO[<2])CO[<2],[>2]C(=O)CC(=O)[<3],[>3]OCC(CO[<2])CO[<2][>2]}"],
         # ["test_dendrimer2", "{[][<]C(=O)CC(=O)[<],[>]OCC(CO[>])CO[>][]}"],
-    #     ["test_star", "C(C{[<][>]OCC[<][>]}O)(CO{[<][<]OCC[>][>]})(C{[<][>]OCC[<][>]}O)CO{[<][<]OCC[>][>]}"],
-    #     ["test_star2", "C(CO{[<][>]CCO[<][>]})(CO{[<][>]CCO[<][>]})(CO{[<][>]CCO[<][>]})CO{[<][>]CCO[<][>]}"],
+        # ["forward_dendrimer", "{[][>2]C(=O)CC(=O)[<1],[>3]OCC(CO[<2])CO[<2],[>2]C(=O)CC(=O)[<3],[>3]OCC(CO[<1])CO[<1][>1]}"],
+        # ["reverse_dendrimer",
+        #  "{[>1][>2]C(=O)CC(=O)[<1],[>3]OCC(CO[<2])CO[<2],[>2]C(=O)CC(=O)[<3],[>3]OCC(CO[<1])CO[<1][]}"],
+        # ["test_star", "C(C{[<][>]OCC[<][>]}O)(CO{[<][<]OCC[>][>]})(C{[<][>]OCC[<][>]}O)CO{[<][<]OCC[>][>]}"],
+        # ["test_star2", "C(CO{[<][>]CCO[<][>]})(CO{[<][>]CCO[<][>]})(CO{[<][>]CCO[<][>]})CO{[<][>]CCO[<][>]}"],
+        # ["many_endgroups_real", "N#CC(C)(C){[$][$]CC(c1ccccc1)[$];[$]C(C)(C)C#N,[$]C=C(c1ccccc1)[]}"],
+        # ["many_endgroups_real2", "[H]CC(C#N)(C){[<][>]CC(c(cc1)ccc1)[<],[>]C(c(cc1)ccc1)C[<];[>]C(C#N)(C)C[H],[>]C=Cc(cc1)c(cc1)[H][]}"],
         # ["many_endgroups", "{[][<]CC[>];[<]OO,[<]NN,[>]SS[]}"],
         # ["many_endgroups_2", "{[>][<]CC[>];[<]OO,[<]{[>][<]SS[>][<]}NN[]}"],
         # ["implicit_endgroup_star", "{[>][<]CC[>];[<]C({[>][<]SS[>][<]}NN){[>][<]OO[>][<]}[]}"],
@@ -3041,7 +2500,7 @@ if __name__ == "__main__":
         # ["3-armed star polymer", "OCCCCCC(=O){[>][<]OCCCCCC(=C)[>][<]}OCc1cc([#Arm1])cc([#Arm2])c1.{#Arm1=c2nnn(CC{[$][$]CC(c3ccccc3)[$][$]}CCC)c2}.{#Arm2=c4nnn({[>][<]CCO[>][<]}C)c4}"],
         # ["Vulcanized polymer", "{[][$]CC=CC[$],[$]CC([<])C([<])C[$],[>]{[$][$]SS[$][$]}[>][]}"],
         # ["Polymer network", "{[][>]C(=O)CCCCCCC(=O)[>],C([#R])([#R])OC([#R])([#R])[]}.{#R=COC(CO{[<][>]CCO[<][>]}CCN[<])(CO{[<][>]CCO[<][>]}CCN[<])}"],
-        # ["macrocycle1", "C1CO{[>][<]CCO[>][<]}CCO1"],
+        ["macrocycle1", "C1CO{[>][<]CCO[>][<]}CCO1"],
         # ["macrocycle2", "O1CC{[>][<]OCC[>][<]}OCC1"],
         # ["test", "{[][>0]CC(c(cc1)ccc1)[<0],[>0]C(c(cc1)ccc1)C[<0];[H]{[<][>]CC(C)=CC[<][>]}[<0][]}"],
         # ["block4", "{[>][<]CCO[>][<]}CCO{[$][$]CC(c1ccccc1)[$][]}"],
@@ -3057,29 +2516,32 @@ if __name__ == "__main__":
         # ["implicit_ends_3", "Br{[<][<]OC(S[<])(O[<])O[<],[>]NN[>][>]}N"],
         # ["implicit_ends_4", "{[][<]OC(S[<])(O[<])O[<],[>]NN[>];[>]N,[<]Br[]}"],
         # ["implicit_ends_5", "{[][<]OC(S[<])(O[<])O[<],[>]NN[>];[>]N,[<]Br,O[>][]}"],
-    #     ["test_graft", "{[][>]CC(O{[>][<]OO[>][]})[<][]}"],
-    #     ["test_split", "CCO{[>][<]C[>2],[<2]CO[>][<]}CCO"],
-
+        # ["test_graft", "{[][>]CC(O{[>][<]OO[>][]})[<][]}"],
+        # ["test_split", "CCO{[>][<]C[>2],[<2]CO[>][<]}CCO"],
+        # ["initial", "N#CC(C)(C){[$][$]CC(c1ccccc1)[$];[$]C(C)(C)C#N,[$]C=C(c1ccccc1)[]}"],
+        # ["second_canonicalization2", "[H]CC(C#N)(C){[<][>]CC(c(cc1)ccc1)[<],[>]C(c(cc1)ccc1)C[<];[>]C(C#N)(C)C[H],[>]C=Cc(cc1)c(cc1)[H][]}"],
+    #
     ]
 
-    # output_folder = f"Paper-Results\\Tests"
-    # # If directory does not exist, create it
-    # try:
-    #     os.makedirs(output_folder)
-    # except:
-    #     pass
-    # # Initialize dataframe with results
-    # results = pd.DataFrame(columns=["BigSMILES", "Canonical"])
-    # # Loop over the test cases
-    # for index, element in enumerate(validation_set):
-    #     subfolder_name = element[0]
-    #     bigsmiles = element[1]
-    #     # Canonicalize
-    #     canonical = canonicalize_bigsmiles(bigsmiles=bigsmiles,
-    #                                        output_folder=os.path.join(output_folder, subfolder_name),
-    #                                        plot=True)
-    #     # Add to dataframe
-    #     results.loc[index, "Canonical"] = canonical
-    #     results.loc[index, "BigSMILES"] = bigsmiles
-    # # Save as Excel file
-    # results.to_excel(os.path.join(output_folder, "Results.xlsx"))
+    output_folder = "Validation\\Tests"
+    # If directory does not exist, create it
+    try:
+        os.makedirs(output_folder)
+    except:
+        pass
+    # Initialize dataframe with results
+    results = pd.DataFrame(columns=["BigSMILES", "Canonical"])
+    # Loop over the test cases
+    for index, element in enumerate(validation_set):
+        subfolder_name = element[0]
+        bigsmiles = element[1]
+        print(f"Canonicalizing {bigsmiles}")
+        # Canonicalize
+        canonical = canonicalize_bigsmiles(bigsmiles=bigsmiles,
+                                           output_folder=os.path.join(output_folder, subfolder_name),
+                                           plot=True)
+        # Add to dataframe
+        results.loc[index, "Canonical"] = canonical
+        results.loc[index, "BigSMILES"] = bigsmiles
+    # Save as Excel file
+    results.to_excel(os.path.join(output_folder, "Results.xlsx"))

@@ -229,6 +229,7 @@ def unfold_cycles(dfta, output_folder=None):
 
     # Do this until no changes can be made
     loop = True
+    count_loop = 0
     while loop:
 
         # Plot if required
@@ -391,6 +392,10 @@ def unfold_cycles(dfta, output_folder=None):
 
         states_to_split = choose_states_to_split(new_dfta, nx_graph)
 
+        count_loop += 1  # TODO did this today
+        if count_loop > 100:
+            loop = False
+
 
     # Remove duplicates of list of transition
     list_of_transitions = list(set(new_dfta.transitions))
@@ -421,276 +426,8 @@ def transitions_to_merge(dfta):
         qtt_out = len(dfta.transition_map[state]["out"])
         is_ending_state = state in dfta.end_states
         if (qtt_in == qtt_out == 1) and not is_ending_state:
-            # Number of times the state read by the output transition
-            # times_read = len([x for x in dfta.transition_map[state]["out"][0].input if x == state])  # TODO remove
-            # if times_read == 1:    # TODO remove. I am just doing this bc I have to fix the case where it merges A(0)->1 and b(1,1) -> 2.
-            #     _merge.append([dfta.transition_map[state]["in"][0], dfta.transition_map[state]["out"][0]])
             _merge.append([dfta.transition_map[state]["in"][0], dfta.transition_map[state]["out"][0]])
     return _merge
-
-
-def merge_transitions_old(dfta, merge):
-    """
-    This function takes a list of pairs of transitions that must be merged and merge them. For example, it converts
-    transitions A([0]) -> 1 and B([1]) -> 2 into AB([0]) -> 2
-    Args:
-        dfta: deterministic finite tree automaton
-        merge: list of pairs of transitions that must be merged
-
-    Returns: dfta with merged transitions
-
-    """
-
-    # Dictionary that maps old transitions to new transitions
-    transition_map = {tr: tr for tr in dfta.transitions}
-
-    # New state machine
-    new_dfta = tree_automata.TreeAutomata(transitions=[], states=[], end_states=[])
-
-    # Transitions to add to new state machine
-    transitions_to_add = dfta.transitions
-
-    # List that keeps track of the pairs of transitions that were already computed
-    computed_transitions = []
-
-    # Loop over each pair of transitions to merge
-    for tr_in, tr_out in merge:
-
-        # If both transitions have already been merged, skip them
-        if (tr_in, tr_out) in computed_transitions:
-            continue
-
-        # If tr_in has already been merged, take the new one
-        tr_in = transition_map[tr_in]
-        # Do the same for tr_out
-        tr_out = transition_map[tr_out]
-
-        # Get the state that will be collapsed
-        collapsed_state = tr_in.output
-
-        #### GENERATE NEW LIST OF INPUT STATES AND OUTPUT STATE
-        # Generate list of new input states in the right order
-        input_cnx_point_map = {1: [1]}    # List that maps the old connection ids to the new ones in the input graph
-        output_cnx_point_map = {1: [1]}    # List that maps the old connection ids to the new ones in the output graph
-        new_input_states = []    # New input states
-        count = 2
-        # For each input state of the output transition, check if it is the collapsed state
-        for output_old_cnx_id, s in enumerate(tr_out.input):
-            # New connection id, based on the position in the new_input_states
-            output_old_cnx_id = output_old_cnx_id + 2
-            # If it is the collapsed state, add the inputs of the input transition to new_input_states
-            if s == collapsed_state:
-                # Update output_cnx_point_map
-                if output_old_cnx_id in output_cnx_point_map.keys():
-                    output_cnx_point_map[output_old_cnx_id].append(output_old_cnx_id)  # Update mapping dict
-                else:
-                    output_cnx_point_map[output_old_cnx_id] = [output_old_cnx_id]
-                # Add inputs to new input
-                new_input_states += tr_in.input
-                # Loop over the input transition inputs to create new connection ids
-                for input_old_cnx_id, _s in enumerate(tr_in.input):
-                    new_cnx_symbol = count    # Old connection id
-                    input_old_cnx_id = input_old_cnx_id + 2    # New connection id, based on the position in the new_input_states
-                    if input_old_cnx_id in input_cnx_point_map.keys():
-                        input_cnx_point_map[input_old_cnx_id].append(new_cnx_symbol)    # Update mapping dict
-                    else:
-                        input_cnx_point_map[input_old_cnx_id] = [new_cnx_symbol]    # If old cnx symbol is not yet in the dict, add it
-                    # Update output_cnx_point_map
-                    if output_old_cnx_id in output_cnx_point_map.keys():
-                        output_cnx_point_map[output_old_cnx_id].append(new_cnx_symbol)    # Update mapping dict
-                    else:
-                        output_cnx_point_map[output_old_cnx_id] = [new_cnx_symbol]
-                    count += 1
-            # If it is not the collapsed state, add it to new_input_states
-            else:
-                new_input_states.append(s)
-                new_cnx_symbol = count    # Old connection id
-                # output_cnx_point_map[output_old_cnx_symbol] = new_cnx_symbol    # Update mapping dict
-                if output_old_cnx_id in output_cnx_point_map.keys():
-                    output_cnx_point_map[output_old_cnx_id].append(new_cnx_symbol)  # Update mapping dict
-                else:
-                    output_cnx_point_map[output_old_cnx_id] = [new_cnx_symbol]
-                count += 1
-        # New output
-        new_output_state = tr_out.output
-
-        #### GENERATE NEW ALPHABET
-        # Get connection index from incoming transition. It is always 1 when it is the output of a transition
-        index_in = "*:1"
-        # Get connection index from output transition
-        count = 2
-        indices_out = []
-        for s in tr_out.input:
-            if s == collapsed_state:
-                indices_out.append(f"*:{count}")
-            # else:
-            count += 1
-
-        # Generate graph from the output alphabet
-        rdkit_graph_out = Chem.MolFromSmiles(tr_out.smiles)
-        graph_out = RDKit_to_networkx_graph(mol=rdkit_graph_out, is_bigsmarts=False, level=0)
-
-        # Add connecting indices back to graph
-        for node in graph_out.nodes():
-            if "*" in graph_out.nodes[node]["symbol"]:
-                # Replace it by the new connection symbol
-                new_symbol = f"*:{output_cnx_point_map[graph_out.nodes[node]['map_num']][0]}"
-                # Add symbol to graph
-                graph_out.nodes[node]["symbol"] = new_symbol
-                # Update mapping number
-                graph_out.nodes[node]["map_num"] = output_cnx_point_map[graph_out.nodes[node]['map_num']][0]
-
-        # New graph will be composed at each iteration
-        new_graph = graph_out
-
-        # For each input of the output transition that will be edited
-        for i, index_out in enumerate(indices_out):
-
-            # Add connecting indices back to graph
-            for node in new_graph.nodes():
-                if "*" in new_graph.nodes[node]["symbol"]:
-                    # Get the connection symbol
-                    symbol = f"*:{new_graph.nodes[node]['map_num']}"
-                    # If the symbol is the one that will be merged, save the node index
-                    if symbol == index_out:
-                        node_out = node
-                        break
-
-            # Generate the graph from the input alphabet
-            rdkit_graph_in = Chem.MolFromSmiles(tr_in.smiles)
-            graph_in = RDKit_to_networkx_graph(mol=rdkit_graph_in, is_bigsmarts=False, level=0)
-            # Relabel nodes of the input alphabet graph starting from the highest node id from the output graph. Do this to merge the graphs
-            # node_shift = max(list(graph_out.nodes())) + 1
-            node_shift = max(list(new_graph.nodes())) + 1
-            graph_in = nx.relabel_nodes(graph_in, mapping={n: n+node_shift for n in graph_in.nodes()})
-            # Add connecting indices back to graph
-            for node in graph_in.nodes():
-                if "*" in graph_in.nodes[node]["symbol"]:
-                    # Get the connection symbol
-                    symbol = f"*:{graph_in.nodes[node]['map_num']}"
-                    # If the symbol is the one that will be merged, save the node index
-                    if symbol == index_in:
-                        node_in = node
-                    else:
-                        # pass
-                        # Replace it by the new connection symbol
-                        new_symbol = f"*:{input_cnx_point_map[graph_in.nodes[node]['map_num']][i]}"
-                        # Add symbol to graph
-                        graph_in.nodes[node]["symbol"] = new_symbol
-                        # Update mapping number
-                        graph_in.nodes[node]["map_num"] = input_cnx_point_map[graph_in.nodes[node]['map_num']][i]
-
-            # Compose both input and output graphs
-            # new_graph = nx.compose(graph_in, graph_out)
-            new_graph = nx.compose(graph_in, new_graph)
-
-            # Get the neighbors of node_in and node_out
-            neighbor_in = canon_tools.find_neighbors(new_graph, node_in)[0]
-            neighbor_out = canon_tools.find_neighbors(new_graph, node_out)[0]
-            # Replace node_in and node_out by a connection between their neighbors
-            bond_type = nx.get_edge_attributes(new_graph, "bond_type")[(neighbor_in, node_in)]
-            bond_type_object = nx.get_edge_attributes(new_graph, "bond_type_object")[(neighbor_in, node_in)]
-            bond_dir_object = nx.get_edge_attributes(new_graph, "bond_dir_object")[(neighbor_in, node_in)]
-            bond_stereo_object = nx.get_edge_attributes(new_graph, "bond_stereo_object")[(neighbor_in, node_in)]
-            new_graph.add_edge(neighbor_in, neighbor_out, bond_type=bond_type, bond_type_object=bond_type_object,
-                               bond_dir_object=bond_dir_object, bond_stereo_object=bond_stereo_object)
-            # Remove node_in and node_out
-            new_graph.remove_node(node_in)
-            new_graph.remove_node(node_out)
-            # Remove any Es at ends
-            new_graph_nodes = copy.deepcopy(new_graph.nodes())
-            for node in new_graph_nodes:
-                # If there is an Es at the end, remove the node
-                if (new_graph.degree(node) == 1) and ("Es" in new_graph.nodes[node]["symbol"]):
-                    new_graph.remove_node(node)
-
-        #### CREATE RDKIT MOLECULE
-        # Get node and edge attributes
-        symbols = nx.get_node_attributes(new_graph, "symbol")
-        formal_charge = nx.get_node_attributes(new_graph, "formal_charge")
-        is_aromatic = nx.get_node_attributes(new_graph, "is_aromatic")
-        bond_object = nx.get_edge_attributes(new_graph, "bond_type_object")
-        # Create molecule
-        mol = Chem.RWMol()
-        # Add atoms
-        node_index_dict = {}
-        for node in new_graph.nodes():
-            # If it is any connecting point, create a Bk atom with the same mapping number
-            if "*:" in symbols[node]:
-                atom = Chem.Atom("Bk")
-                atom.SetAtomMapNum(new_graph.nodes[node]["map_num"])
-            # If it is a regular atom, create the atom
-            else:
-                atom = Chem.Atom(symbols[node])
-                atom.SetFormalCharge(formal_charge[node])
-                atom.SetIsAromatic(is_aromatic[node])
-            # Add atom to molecule
-            idx = mol.AddAtom(atom)
-            # Save atom index
-            node_index_dict[node] = idx
-        # Add bonds
-        for edge in new_graph.edges():
-            # Get nodes
-            node1, node2 = edge
-            # Get indices
-            idx1, idx2 = node_index_dict[node1], node_index_dict[node2]
-            # Add bond
-            bond_idx = mol.AddBond(idx1, idx2, bond_object[edge]) - 1
-            bond = mol.GetBondWithIdx(bond_idx)
-            bond.SetStereo(new_graph.edges[edge]["bond_stereo_object"])
-            bond.SetBondDir(new_graph.edges[edge]["bond_dir_object"])
-
-        # Sanitize molecule
-        Chem.SanitizeMol(mol)
-
-        #### GENERATE SMILES
-        new_smiles = Chem.MolToSmiles(mol)
-        # Replace heavy atoms by *
-        new_smiles = new_smiles.replace("[Bk:", "[*:")
-        # new_smiles = new_smiles.replace("[Cf:", "[*:")
-
-        #### ADD NEW TRANSITION TO STATE MACHINE
-        new_transition = tree_automata.Transitions(input=new_input_states,
-                                                   output=new_output_state,
-                                                   smiles=new_smiles,
-                                                   alphabet=f"{tr_in.alphabet}{tr_out.alphabet}")    # The alphabet will not matter here
-        new_dfta.transitions.append(new_transition)
-
-        # Remove tr_in and tr_out from new_dfta
-        if tr_in in new_dfta.transitions:
-            new_dfta.transitions.remove(tr_in)
-        if tr_out in new_dfta.transitions:
-            new_dfta.transitions.remove(tr_out)
-
-        # Update transition map
-        for tr_before, tr_after in transition_map.items():
-            if (tr_after == tr_in) or (tr_after == tr_out):
-                transition_map[tr_before] = new_transition
-        # transition_map = {tr_old: tr_new if tr_new not in (transition_map[tr_in], transition_map[tr_in])
-        #                     else new_transition for tr_old, tr_new in transition_map.items()}
-        transition_map[tr_in] = new_transition
-        transition_map[tr_out] = new_transition
-
-        # Remove tr_in and tr_out from list of transitions to be added
-        if tr_in in transitions_to_add:
-            transitions_to_add.remove(tr_in)
-        if tr_out in transitions_to_add:
-            transitions_to_add.remove(tr_out)
-
-        # Point out that the transitions have already been computed
-        computed_transitions.append([tr_in, tr_out])
-
-    #### FINISH ADDING ATTRIBUTES TO TREE AUTOMATON
-    # Add remaining transitions
-    for tr in transitions_to_add:
-        new_dfta.transitions.append(tr)
-    # Add ending states
-    new_dfta.end_states = dfta.end_states
-    # Create list of states and the transition map
-    new_dfta.states = new_dfta.get_states()
-    new_dfta.transition_map = new_dfta.generate_transition_map()
-
-    return new_dfta
 
 
 def merge_transitions(dfta, merge):
@@ -769,7 +506,6 @@ def merge_transitions(dfta, merge):
             else:
                 new_input_states.append(s)
                 new_cnx_symbol = count    # Old connection id
-                # output_cnx_point_map[output_old_cnx_symbol] = new_cnx_symbol    # Update mapping dict
                 if output_old_cnx_id in output_cnx_point_map.keys():
                     output_cnx_point_map[output_old_cnx_id].append(new_cnx_symbol)  # Update mapping dict
                 else:
@@ -846,7 +582,6 @@ def merge_transitions(dfta, merge):
     new_dfta.transition_map = new_dfta.generate_transition_map()
 
     return new_dfta
-
 
 
 def collapse_linkers_and_RUs(dfta):
@@ -952,13 +687,14 @@ def collapse_linkers_and_RUs(dfta):
     return dfta
 
 
-def format_smiles(smiles):
+def format_smiles(smiles, counter=0):
     """
     This function formats the SMILES by placing the [*:1] at the beginning of the string. If there is no [*:1], which
     is the case where there is only [*:2], [*:2] must be at the end. It also replaces [Es] by ''.
     This function creates a BigSMILES object from BigSMILES_BigSmilesObj.py
     Args:
         smiles: SMILES string of the alphabet
+        counter: counter that makes the ring indices unique for each molecule. The ring indices will start from counter
 
     Returns: formatted SMILES
 
@@ -973,7 +709,7 @@ def format_smiles(smiles):
         return "[H][*:2]"
 
     # Create a BigSMILES parser object
-    p = BigSMILES_BigSmilesObj.BigSMILES(smiles)
+    p = BigSMILES_BigSmilesObj.BigSMILES(smiles, ringCounter=counter)
 
     # Candidate to be the first bonding descriptor: [*:1]
     sources = [node for node in p.G.nodes if ("[*:1]" in p.G.nodes[node]["rawStr"])]
@@ -1490,7 +1226,6 @@ def eliminate_states(dfta, states_to_eliminate, start_state, end_state):
                     else:
                         new_input_states.append(s)
                         new_cnx_symbol = count  # Old connection id
-                        # output_cnx_point_map[output_old_cnx_symbol] = new_cnx_symbol    # Update mapping dict
                         if output_old_cnx_id in output_cnx_point_map.keys():
                             output_cnx_point_map[output_old_cnx_id].append(new_cnx_symbol)  # Update mapping dict
                         else:
@@ -1626,162 +1361,6 @@ def clear_starting_transitions(tree):
         tree.remove_transition(tr)
 
     return tree
-
-
-def to_bigsmiles_old(dfta, tree_name, output_folder, draw_alphabets):
-    """
-    This functions converts a tree automaton into BigSMILES. It uses an algorithm similar to the one that converts
-    deterministic finite automata into regular expressions.
-
-    Here are the steps it follows:
-        1) Sort the state machine
-        2) Separate (unfold) cycles
-        3) Merge transitions
-        4) Replace linkers by empty transitions when necessary
-            - When a linker is just like the repeat units of the resulting state, and (both states are accepting or both have the same transition to the same state)
-        5) Make [*:1] the root of every alphabet
-            - This makes it way easier to convert it back to string later → does not require string reversing
-        6) Create one single start state
-        7) Create one single end state
-        8) Convert tree automaton into networkx graph
-        9) Remove redundant empty transitions
-        10) Detect cycles and adjacent cycles
-        11) Define the backbone
-            . Heaviest, longest path with the largest number of accepting states
-            . Branch points
-                . If it is not within a cycle, may be on backbone
-                . If it is within a cycle and loops back to the path, may be on backbone
-                . If it is within a cycle and does not loop back to the path (it is a side chain), may not be on backbone
-        12) Define which nodes will be eliminated first
-            . Prioritize nodes not along the backbone → this makes sure all side chains are collapsed first
-            . Decrease priority of nodes in cycles with backbone nodes → prioritize nested and side chains
-            . Increase priority of nodes with self loops → dealing with them first makes sure the nested stochastic objects will be treated first
-        13) Eliminate nodes (convert to BigSMILES)
-
-    Args:
-        dfta: tree automaton
-        tree_name: name of the tree, which will appear in the output file name
-        output_folder: output folder
-        draw_alphabets: function that will draw the alphabets
-
-    Returns: BigSMILES
-
-    """
-
-    # Remove duplicates of starting transitions with the same alphabet
-    dfta = clear_starting_transitions(dfta)
-
-    # Sort the state machine and relabel states so that all steps beyond this point result in the same output
-    dfta.sort()
-    # Unfold cycles
-    dfta = unfold_cycles(dfta, output_folder=output_folder + "\\Tree_Unfolding")
-    dfta.plot(tree_name=f"Unfolded_{tree_name}", draw_alphabet_function=draw_alphabets, output_folder=output_folder)
-    # Get the transtions that have to be merged
-    merge = transitions_to_merge(dfta)
-    # Merge transitions
-    dfta = merge_transitions(dfta, merge)
-    dfta.plot(tree_name=f"Collapsed_tree_{tree_name}", draw_alphabet_function=draw_alphabets, output_folder=output_folder)
-
-    # Relabel the states again
-    dfta.sort()
-
-    # Merge e-transitions with repeat units
-    dfta = collapse_linkers_and_RUs(dfta)
-    dfta.plot(tree_name=f"RU_and_Linkers_{tree_name}", output_folder=output_folder)
-
-    # Make [*:1] the root of each alphabet
-    for tr in dfta.transitions:
-        tr.smiles = format_smiles(tr.smiles)
-
-    # Create one single start state
-    new_start_state = max(dfta.states) + 1
-    dfta.states.append(new_start_state)
-    dfta.transition_map[new_start_state] = {"in": [], "out": []}
-    # Make all initial transitions come from this state
-    for tr in dfta.transitions:
-        if not tr.input:
-            tr.input = [new_start_state]
-            dfta.transition_map[new_start_state]["out"].append(tr)
-    # Add an empty transition to this state
-    single_start_transition = tree_automata.Transitions(input=[], output=new_start_state, alphabet="START", smiles="")
-    dfta.transitions.append(single_start_transition)
-    dfta.transition_map[new_start_state]["in"].append(single_start_transition)
-
-    # Add e-transitions from end states to new ending state
-    new_end_state = new_start_state + 1
-    dfta.transition_map[new_end_state] = {"in": [], "out": []}
-    for s in dfta.end_states:
-        _tr = tree_automata.Transitions(input=[s], output=new_end_state, alphabet="END", smiles="[*:2]")
-        dfta.transitions.append(_tr)
-        dfta.transition_map[s]["out"].append(_tr)
-        dfta.transition_map[new_end_state]["in"].append(_tr)
-    dfta.end_states = [new_end_state]
-    dfta.states.append(new_end_state)
-    dfta.plot(tree_name=f"Single_StartAndEnd_{tree_name}", output_folder=output_folder)
-
-    # Generate networkx graph
-    nx_graph = dfta.DFTA_to_networkx()
-
-    # Remove redundant e-transitions
-    forms_of_empty_transitions = ["[*:1]", "[*:1][*:2]", "[*:2]", "[*:1][Es][*:2]", "[*:1][Es]", "[Es][*:2]"]
-    remove_redundant_empty_transitions(dfta, nx_graph, forms_of_empty_transitions)
-    dfta.plot(tree_name=f"No_Redundant_Empty_{tree_name}", output_folder=output_folder)
-
-    # Identify cycles
-    cycles = list(nx.simple_cycles(nx_graph))
-    # Find adjacent cycles
-    adjacent_cycles = find_adjacent_cycles(cycles)
-
-    # Identify backbone
-    starts = [new_start_state]
-    ends = [new_end_state]
-    backbone = define_backbone(nx_dfta=nx_graph, adjacent_cycles=adjacent_cycles, starts=starts, ends=ends)
-
-    # Set list of states that will be eliminated first
-    # Initialize backbone states with ranking -10, while the others are 0
-    state_rank = {n: 0 if n not in backbone else -10 for n in dfta.states}
-    # If a node is in a cycle with a backbone node, decrease priority
-    simple_cycles_backbone = [c for c in cycles if not set(c).isdisjoint(set(backbone))]    # Simples cycles with backbone atoms
-    adjacent_cycles_backbone = [c for c in adjacent_cycles if not set(c).isdisjoint(set(backbone))]  # Adjacent cycles with backbone atoms
-    # Check simple cycles and decrease (this gives priority to nested objects along backbone). Reduce 1
-    for node in dfta.states:
-        if node not in backbone:
-            for c in simple_cycles_backbone:
-                if node in c:
-                    state_rank[node] += -1
-                    break
-    # Check adjacent cycles and decrease  (this gives priority to side chains). Reduce 1
-    for node in dfta.states:
-        if node not in backbone:
-            for c in adjacent_cycles_backbone:
-                if node in c:
-                    state_rank[node] += -1
-                    break
-    # If it has a self loop, increase priority + 1
-    self_loop_states = []
-    for state in dfta.states:
-        for tr in dfta.transition_map[state]["in"]:
-            _in = set(tr.input)
-            _out = set({tr.output})
-            # If input and output are the same, add 1 and move to other state
-            if _in == _out:
-                state_rank[state] += 1
-                self_loop_states.append(state)
-                break
-    # TODO reduce priority of nodes with branched self loops
-    # for cycle in cycles:
-    #     if len(cycle) == 1:    # Self loops are in this format: [n]
-    #         state_rank[cycle[0]] += 1
-    # Sort and convert into a list
-    states_to_eliminate = sorted(state_rank.keys(), key=lambda x: state_rank[x], reverse=True)
-    # Remove end states and the starting state
-    states_to_eliminate.remove(new_start_state)
-    states_to_eliminate.remove(new_end_state)
-
-    # Eliminate states
-    bigsmiles = eliminate_states(dfta, states_to_eliminate, start_state=starts[0], end_state=ends[0])
-
-    return bigsmiles
 
 
 # IDEA: do not eliminate accepting states ------------------------------------------------------------------------------
@@ -1954,11 +1533,7 @@ def _to_bigsmiles(tree, states_to_eliminate, new_start_state, new_end_state, old
         # Generate list of the other repeating units
         repeat_units = generate_list_of_rus(transitions_to_convert)
 
-        # # Create BigSMILES
-        # bigsmiles = "{[]" + ",".join(repeat_units) + f"[>{start_transition.output}]" + \
-        #             "}" + f"{start_transition.smiles.replace('[*:1]', '')}"
-
-        # Create BigSMILES TODO did this today
+        # Create BigSMILES
         # If the starting transition is only an empty transition, do not add the end group
         if start_transition.smiles in tree_automata.FORMS_OF_STARTING_EMPTY_ALPHABET:
             bigsmiles = "{[]" + ",".join(repeat_units) + "[]}"
@@ -2040,13 +1615,17 @@ def _to_bigsmiles(tree, states_to_eliminate, new_start_state, new_end_state, old
 
 def treat_transitions(tree):
     """
-    This function sorts the input list and formats the SMILES of the transitions of a tree automaton.
+    This function sorts the input list and formats the SMILES of the transitions of a tree automaton. It also assigns
+    a unique ring closure index to each ring in every alphabet to prevent disconnected rings from being connected
     Args:
         tree: tree automaton
 
     Returns: tree automaton
 
     """
+    # Initialize the counter that will ensure each ring index is unique
+    counter = 0
+
     for tr in tree.transitions:
         # Initial input
         initial_input = copy.deepcopy(tr.input)
@@ -2076,9 +1655,42 @@ def treat_transitions(tree):
         # Replace "replace" by "*"
         tr.smiles = tr.smiles.replace("replace", "*")
         # Make [*:1] the root of the string
-        tr.smiles = format_smiles(tr.smiles)
+        tr.smiles = format_smiles(tr.smiles, counter=counter)
+
+        # Get the highest ring index to update counter
+        ring_closures_together = [int(digit) for match in re.findall(r"[A-Za-z]\]?(\d+)", tr.smiles) for digit in match]
+        ring_closure_separated = [int(digit) if digit else 0 for _tuple in re.findall(r"[A-Za-z]\]?(\d(%\d+)+)", tr.smiles)
+                                  for match in _tuple for digit in match.split("%")]
+        if ring_closure_separated + ring_closures_together:
+            max_index = max(ring_closure_separated + ring_closures_together)
+            counter += max_index
+
+    # # Assign a unique ring closure index to each ring in every alphabet. This prevents disconnected rings from being connected
+    # count = 1
+    # for tr in tree.transitions:
+    #     ring_closures = re.findall(r"[A-Za-z]\]?\%?\d+", tr.smiles)
+    #     ring_closure_indices = set(sorted([re.findall(r'\d+', x)[0] for x in ring_closures]))
+    #     for index in ring_closure_indices:
+    #         to_replace = set(re.findall(rf"[A-Za-z]\]?\%?{index}", tr.smiles))
+    #         # Replace in the string
+    #         for _to_replace in to_replace:
+    #             if count > 9:
+    #                 if "%" in _to_replace:
+    #                     tr.smiles = tr.smiles.replace(_to_replace, _to_replace.replace(index, f"[[replace]]{count}"))
+    #                 else:
+    #                     tr.smiles = tr.smiles.replace(_to_replace, _to_replace.replace(index, f"[[replace]]%{count}"))
+    #             else:
+    #                 if "%" in _to_replace:
+    #                     tr.smiles = tr.smiles.replace(_to_replace, _to_replace.replace(f"%{index}", f"[[replace]]{count}"))
+    #                 else:
+    #                     tr.smiles = tr.smiles.replace(_to_replace, _to_replace.replace(index, f"[[replace]]{count}"))
+    #         # Update count
+    #         count += 1
+    #     # Remove "replace" from string
+    #     tr.smiles = tr.smiles.replace("[[replace]]", "")
 
     return tree
+
 
 def treat_automaton(tree, tree_name, output_folder, draw_alphabets):
     """
@@ -2312,841 +1924,6 @@ def define_states_to_remove(tree, backbone, cycles, adjacent_cycles, new_start_s
         states_to_eliminate.remove(s)
 
     return states_to_eliminate, old_end_states
-
-# OLD IDEA -------------------------------------------------------------------------------------------------------------
-def DFTA_to_bigsmiles(dfta, tree_name, output_folder, draw_alphabets):
-    """
-    This function converts a tree automaton into a BigSMILES string.
-    Args:
-        dfta: deterministic finite tree automaton
-    Returns: the BigSMILES string
-
-    """
-    # Replace transitions with Es by ""
-    # forms_of_Es = [Chem.MolFromSmiles("[Es]"), Chem.MolFromSmiles("[Es][*:1]"), Chem.MolFromSmiles("[*:2][Es][*:1]"),
-    #                Chem.MolFromSmiles("[Es][*:2]")]
-    # for tr in dfta.transitions:
-    #     if tr.smiles in forms_of_Es:
-    #         tr.smiles = ""
-
-    # Update transition map
-    # dfta.generate_transition_map()
-    # Sort the state machine and relabel states so that all steps beyond this point result in the same output
-    dfta.sort()
-    # Separate cycles
-    dfta = separate_cycles(dfta)
-    dfta.plot(tree_name=f"Unfolded_{tree_name}", draw_alphabet_function=draw_alphabets, output_folder=output_folder)
-    # Get the transtions that have to be merged
-    merge = transitions_to_merge(dfta)
-    # Merge transitions
-    dfta = merge_transitions(dfta, merge)
-    dfta.plot(tree_name=f"Collapsed_tree_{tree_name}", draw_alphabet_function=draw_alphabets, output_folder=output_folder)
-
-    # Relabel the states again
-    dfta.sort()
-
-    # Merge e-transitions with repeat units
-    dfta = collapse_linkers_and_RUs(dfta)
-    dfta.plot(tree_name=f"RU_and_Linkers_{tree_name}", output_folder=output_folder)
-    # # Remove non-cyclic states
-    # dfta = eliminate_noncyclic_nodes(dfta)
-    # dfta.plot(tree_name=f"Noncyclic_states_eliminated_{tree_name}", output_folder=output_folder)
-    # Minimize end states
-
-
-    # Get list of starting transitions that are not Es
-    starting_transitions = [x for x in dfta.get_starting_transitions()]# if ("Es" not in x.smiles)]
-    # Get transitions that result in end states and are not starting transitions
-    ending_transitions = [x for x in dfta.get_ending_transitions() if x.input != []]
-    # Get the remaining transitions
-    transitions = [x for x in dfta.get_nonstarting_transitions()
-                   if (x not in ending_transitions) and (x not in starting_transitions)]
-
-
-    #### CONVERT NON STARTING TRANSITIONS INTO REPEATING UNITS
-    # Convert transitions to list of RU
-    list_of_rus = []
-    for tr in transitions:
-        # Convert transition into repeat unit
-        ru = transition_to_ru(tr)
-        # Add to list of repeating units
-        list_of_rus.append(ru)
-
-
-    #### ADD STARTING TRANSITIONS TO LIST OF END GROUPS
-    list_of_endgroups = []
-    for tr in starting_transitions:
-        # If it is an empty transition, only add a bonding descriptor as an end group
-        if ("Es" in tr.smiles) or (tr.smiles == ""):
-            endgroup = f"[>{tr.output}]"
-        else:
-            # Convert transition into end group
-            endgroup = transition_to_ru(tr)
-        # Add to list of end groups
-        list_of_endgroups.append(endgroup)
-
-    #### ADD ENDING TRANSITIONS TO LIST OF END GROUPS OR LIST OF REPEAT UNITS
-    cap_state = max(dfta.states) + 1    # State that will cap end states
-    for tr in ending_transitions:
-        # Count the number of connections
-        number_connections = len(re.findall(r"\[\*\:\d*\]", tr.smiles))
-        # If it has more than 1 connection, treat as a repeat unit
-        if number_connections > 1:
-            # Convert into repeat unit and add to repeat unit list
-            smiles = transition_to_ru_old(tr)
-            list_of_rus.append(smiles)
-            # Because these are ending transitions, they must cap the polymer. So, we need to turn them into repeat units
-            # that do not point anywhere TODO ACTUALLY THEY MUST NOT BE END GROUPS BECAUSE OF THIS, SOME RUS ARE BECOMING END GROUPS
-            # smiles = re.sub(r"\[>\d*\]", "", smiles).replace("()", "")    # Remove output bonding descriptor and remove "()" in case they were in a branch
-            # list_of_endgroups.append(smiles)
-            # Add empty end group from the output state to cap the molecule TODO uncomment?
-            list_of_endgroups.append(f"[<{tr.output}]")
-            # Add empty repeat unit to cap_state
-            # list_of_rus.append(f"[<{tr.output}][>{cap_state}]")
-        # If it only has 1 connection, treat as an end group. This alphabet was generated by an end group, so it is linear
-        else:
-            # Convert transition into end group
-            endgroup = transition_to_endgroup(tr)
-            list_of_endgroups.append(endgroup)
-
-    # Remove duplicates of list of end groups and sort
-    list_of_endgroups = list(set(list_of_endgroups))
-    # Remove duplicates of list of repeating units and sort
-    list_of_rus = list(set(list_of_rus))
-
-    # Add $ when necessary
-    conj_to_dollarsign = {}
-    for i, ru_i in enumerate(list_of_rus):
-        # Replace bonding descriptors by heavy atoms
-        ru_i_heavy = ru_i.replace("<", "Bk:").replace(">", "Bk:")
-        ru_i_heavy = canonicalize_smiles(ru_i_heavy)
-        for j, ru_j in enumerate(list_of_rus):
-            # Replace bonding descriptors by opposite heavy atoms
-            ru_j_heavy = ru_j.replace(">", "Bk:").replace("<", "Bk:")
-            ru_j_heavy = canonicalize_smiles(ru_j_heavy)
-            # If two repeat units are the same, replace all bonding descriptors by $
-            if (ru_i_heavy == ru_j_heavy) and (j != i):
-                for conj in re.findall(r"\[>\d*\]|\[<\d*\]", ru_i):
-                    conj_to_dollarsign[conj] = conj.replace(">", "$").replace("<", "$")
-                break
-    # Replace
-    for i, ru in enumerate(list_of_rus):
-        for conj, dollarsign in conj_to_dollarsign.items():
-            ru = ru.replace(conj, dollarsign)
-        list_of_rus[i] = ru
-    for i, end in enumerate(list_of_endgroups):
-        for conj, dollarsign in conj_to_dollarsign.items():
-            end = end.replace(conj, dollarsign)
-        list_of_endgroups[i] = end
-
-    # Canonicalize repeat units
-    for i, ru in enumerate(list_of_rus):
-        # Replace bonding descriptors by heavy atoms
-        ru = ru.replace("<", "Bk:").replace(">", "Cf:").replace("$", "Cm:")
-        # Canonicalize
-        ru = canonicalize_smiles(ru)
-        # Replace bonding heavy atoms by descriptors
-        ru = ru.replace("Bk:", "<").replace("Cf:", ">").replace("Cm:", "$")
-        # Update
-        list_of_rus[i] = ru
-
-    # Remove duplicates of list of end groups and sort
-    list_of_endgroups = sorted(list(set(list_of_endgroups)))
-    # Remove duplicates of list of repeating units and sort
-    list_of_rus = sorted(list(set(list_of_rus)))
-    # Format repeat units
-    list_of_rus = [format_ru(x) for x in list_of_rus]
-
-    #### GENERATE BigSMILES
-    bigsmiles = "{[]" + f"{','.join(list_of_rus)};{','.join(list_of_endgroups)}" + "[]}" #f"[<{cap_state}]" + "}"
-
-    #### REMOVE INDICES OF ALL BONDING DESCRIPTORS WITH INDEX 0
-    bigsmiles = bigsmiles.replace(">0", ">").replace("<0", "<").replace("$0", "$")
-
-    return bigsmiles, dfta
-
-
-def format_ru(ru):
-    """
-    This function places the bonding descriptors at the ends of the repeating units. Although it says "ru", it also works
-    for end groups. This function creates a BigSMILES object from BigSMILES_BigSmilesObj.py
-    Args:
-        ru: SMILES of the repeat units (bonding descriptors do not appear as heavy atoms)
-
-    Returns: RU with bonding descriptors at the ends
-
-    """
-    # Create a BigSMILES parser object
-    p = BigSMILES_BigSmilesObj.BigSMILES(ru)
-
-    # Candidates to be the first bonding descriptor
-    sources = [[node, p.G.nodes[node]["rawStr"], re.findall(r"\d+", p.G.nodes[node]["rawStr"])]
-               for node in p.G.nodes if ("<" in p.G.nodes[node]["rawStr"]) or ("$" in p.G.nodes[node]["rawStr"])]
-    # Sort. Prioritize < with highest index
-    sources = sorted(sources, key=lambda x: ["<" not in x[1], x[2]])
-    sources = [x[0] for x in sources]
-
-    # Candidates to be the last bonding descritors. Prioritize > with highest index
-    targets = [[node, p.G.nodes[node]["rawStr"], re.findall(r"\d+", p.G.nodes[node]["rawStr"])]
-               for node in p.G.nodes if (">" in p.G.nodes[node]["rawStr"]) or ("$" in p.G.nodes[node]["rawStr"])]
-    # Sort. Prioritize > with highest index
-    targets = sorted(targets, key=lambda x: [">" not in x[1], x[2]])
-    targets = [x[0] for x in targets]
-
-    # If there is only one bondind descriptor, get the longest, heaviest path
-    # If there is only an output bonding descriptor
-    if not sources:
-        # Find the heaviest, longest path between the bonding descriptor and an atom
-        _paths = canon_tools.find_all_paths(list(p.G.nodes), targets, p.G)
-        # Choose the longest path
-        _paths = sorted(_paths, key=lambda x: len(x), reverse=True)
-        size_longest_path = len(_paths[0])
-        longest_paths = [x for x in _paths if len(x) == size_longest_path]
-        # Among the longest paths, choose the heaviest one and the one with the heaviest atoms by the end
-        periodic_table = Chem.GetPeriodicTable()
-        path_masses = []
-        for path in longest_paths:
-            mass = 0
-            weighted_mass = 0
-            # Calculate the mass and weighted mass of the path
-            for i, node in enumerate(path):
-                # If it is not an atom, continue
-                if p.G.nodes[node]["_type"] == "BigSMILES_Bond":
-                    continue
-                # If it is an atom, add its mass
-                else:
-                    atom_symbol = p.G.nodes[node]["atom"]
-                    neighbors = p.G.nodes[node]["neighList"]
-                    number_of_hs = periodic_table.GetDefaultValence(atom_symbol) - len(neighbors)
-                    _mass = periodic_table.GetAtomicWeight(atom_symbol) + number_of_hs
-                    # Increment mass
-                    mass += _mass
-                    # Increment weighted mass
-                    weighted_mass += _mass*(i+1)**2
-            # Add to path_masses
-            path_masses.append([path, mass, weighted_mass])
-        # Select the heaviest, longest path
-        path_masses = sorted(path_masses, key=lambda x: [x[1], x[2]], reverse=True)
-        longest_path = path_masses[0][0]
-        # Get the first atom of the path
-        source = longest_path[0]
-        target = targets[0]
-    # If there is only an input bonding descriptor
-    elif not targets:
-        # Find the heaviest, longest path between the bonding descriptor and an atom
-        _paths = canon_tools.find_all_paths(sources, list(p.G.nodes), p.G)
-        # Choose the longest path
-        _paths = sorted(_paths, key=lambda x: len(x), reverse=True)
-        size_longest_path = len(_paths[0])
-        longest_paths = [x for x in _paths if len(x) == size_longest_path]
-        # Among the longest paths, choose the heaviest one and the one with the heaviest atoms by the end
-        periodic_table = Chem.GetPeriodicTable()
-        path_masses = []
-        for path in longest_paths:
-            mass = 0
-            weighted_mass = 0
-            # Calculate the mass and weighted mass of the path
-            for i, node in enumerate(path):
-                # If it is not an atom, continue
-                if p.G.nodes[node]["_type"] == "BigSMILES_Bond":
-                    continue
-                # If it is an atom, add its mass
-                else:
-                    atom_symbol = p.G.nodes[node]["atom"]
-                    neighbors = p.G.nodes[node]["neighList"]
-                    number_of_hs = periodic_table.GetDefaultValence(atom_symbol) - len(neighbors)
-                    _mass = periodic_table.GetAtomicWeight(atom_symbol) + number_of_hs
-                    # Increment mass
-                    mass += _mass
-                    # Increment weighted mass
-                    weighted_mass += _mass*(i+1)**2
-            # Add to path_masses
-            path_masses.append([path, mass, weighted_mass])
-        # Select the heaviest, longest path
-        path_masses = sorted(path_masses, key=lambda x: [x[1], x[2]], reverse=True)
-        longest_path = path_masses[0][0]
-        # Get the first atom of the path
-        target = longest_path[-1]
-        source = sources[0]
-    # Choose a source and a targets
-    else:
-        # Pick a target and a source != target. This is because when only $ are present, sources = targets
-        target = targets[0]
-        source = [x for x in sources if x != target][0]
-
-    # Place bonding descriptors at the ends
-    ru = p.place_bonding_descriptors_at_end(source=source, target=target)
-
-    return ru
-
-
-def format_ru_old(ru):
-    """
-    Formats a repeating unit (with bonding descriptors). Leaves bonding descriptor at the ends of the string.
-    Replaces < by Bk, > by Cf and $ by Cm
-    Args:
-        ru: string of repeat unit
-
-    Returns: formatted repeat unit
-
-    """
-    atom_bd_map = {"Cf": ">", "Bk": "<", "Cm": "$"}
-    smiles = ru
-    for atom_symbol, bd_symbol in atom_bd_map.items():
-        smiles = smiles.replace(f"[{bd_symbol}", f"[{atom_symbol}:")
-    # smiles = ru.replace("[<", "[Bk:").replace("[>", "[Cf:").replace("[$", "[Cm:")
-    # Generate the molecule
-    mol = Chem.MolFromSmiles(smiles)
-
-    # Find bonding descriptor classes
-    new_to_old_classes = {}
-    bd_classes = []
-    class_to_position_map = {}
-    for atom in mol.GetAtoms():
-        atom_symbol = atom.GetSymbol()
-        # # If the symbol is a Cf (or >), it should be the last within the string (increase atom class)
-        # if atom_symbol == "Cf":
-        #     atom.SetAtomMapNum((atom.GetAtomMapNum() + 1)*100)
-        # If it is a bonding descriptor, get the atom map number
-        if atom_symbol in ["Bk", "Cf", "Cm"]:
-            # Old atom class
-            atom_class = atom.GetAtomMapNum()
-            # Atom position in string
-            position_in_string = atom.GetIdx()
-            # New class will be the (old + 1) times the (position + 1). With this, we can handle bonding descriptors
-            # without indices, like [$], and we can distinguish 2 equal bonding descriptors like in C([$])C(c1ccccc1)[$]
-            new_atom_class = (atom_class + 1) * (position_in_string + 1)
-            # If the symbol is a Cf (or >), it should be the last within the string (increase atom class)
-            if atom_symbol == "Cf":
-                new_atom_class *= 100
-            # Set new atom class
-            atom.SetAtomMapNum(new_atom_class)
-            # List of classes
-            bd_classes.append(new_atom_class)
-            # Dict of old and new classes
-            new_to_old_classes[new_atom_class] = atom_class
-            # Map class to position
-            class_to_position_map[new_atom_class] = position_in_string
-
-    # Get a number between the first and second highest to be the other atom's classes
-    bd_classes = sorted(bd_classes)
-    lowest_class = bd_classes[0]
-    first_position = class_to_position_map[lowest_class]
-    # Get the position of the atoms that must appear last
-    highest_class = bd_classes[-1]
-    last_position = class_to_position_map[highest_class]
-
-    # Set the chirality of the starting and the ending atoms. For some reason, it makes Rdkit place them at start/end
-    start_atom = mol.GetAtomWithIdx(first_position)
-    end_atom = mol.GetAtomWithIdx(last_position)
-    start_atom.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
-    end_atom.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
-
-    # bd_classes = sorted(bd_classes)
-    # atom_class = bd_classes[-1] - 1
-    # # Assign class to all atoms
-    # if atom_class:
-    #     for atom in mol.GetAtoms():
-    #         # Get atom class
-    #         number = atom.GetAtomMapNum()
-    #         # If it is 0, set to atom_class
-    #         if number == 0:
-    #             atom.SetAtomMapNum(atom_class)
-    # Generate canonical smiles
-    smiles = Chem.MolToSmiles(mol, rootedAtAtom=first_position, isomericSmiles=True)
-
-    # Replace heavy atoms by bonding descriptors
-    for atom_symbol, bd_symbol in atom_bd_map.items():
-        bonding_descriptors = re.findall(rf"\[{atom_symbol}\:\d*\]", smiles)
-        for bd in bonding_descriptors:
-            new_class = int(re.findall(r"\d+", bd)[0])
-            old_class = new_to_old_classes[new_class]
-            # Replace [atom_sybol:new_class] by [bd_symbol old_class]
-            smiles = smiles.replace(f"[{atom_symbol}:{new_class}]", f"[{bd_symbol}{old_class}]")
-
-    return smiles
-
-
-def transition_to_endgroup(transition):
-    """
-    This function converts a transition into an end group. This function is slightly different than transition_to_ru().
-    Some ending alphabets have 2 (or more) connecting points and, thus, are treated by transition_to_ru().
-    However, the cases this function treats are the ones whose alphabets were originated from end groups and, thus,
-    only have 1 connecting point ([*:2]). Moreover, because they arise from end groups, they are always linear.
-    In this case, the function should only look at the input states.
-    Args:
-        transition: a transitions from the deterministic finite tree automaton
-
-    Returns: string that represents the end group
-    """
-    # Get the alphabet
-    smiles = transition.smiles
-    # Replace 2 in [*:2] by the input state
-    # smiles = smiles.replace(f"[*:2]", f"[Bk:{transition.input[0]}]")
-    smiles = re.sub(r"\[\*\:\d\]", f"[Bk:{transition.input[0]}]", smiles)    # TODO add this do documentation
-    # Canonicalize
-    smiles = canonicalize_smiles(smiles)
-    # Replace *: by <
-    smiles = smiles.replace(f"[Bk:{transition.input[0]}]", f"[<{transition.input[0]}]")
-
-    return smiles
-
-
-def transition_to_ru_old(transition):
-    """
-    This function converts a transition into a repeat unit
-    Args:
-        transition: a transitions from the deterministic finite tree automaton
-
-    Returns: string that represents the repeat unit
-    """
-    smiles = transition.smiles
-    count = 2
-    # Replace * by heavy atoms. For input, use Bk
-    for node in transition.input:
-        smiles = smiles.replace(f"[*:{count}]", f"[Bk:{node}]")
-        count += 1
-    # For output, use Cf
-    smiles = smiles.replace("[*:1]", f"[Cf:{transition.output}]")
-    # smiles = smiles.replace("Bk", "*").replace("Cf", "*")
-    # Canonicalize repeat unit
-    smiles = canonicalize_smiles(smiles)
-    # Replace Bk by < and Cf by >
-    smiles = smiles.replace("[Bk:", "[<").replace("[Cf:", "[>")
-    # Remove Es. In case it was a branch, remove the branch
-    # smiles = smiles.replace("[Es]", "").replace("(", "").replace(")", "")
-    # smiles = smiles.replace(f"[*:{transition.output}]", f"[>{transition.output}]")
-    # for node in transition.input:
-    #     smiles = smiles.replace(f"[*:{node}]", f"[<{node}]")
-
-    return smiles
-
-
-def canonicalize_smiles(smiles):
-    """
-    This function canonicalizes a smiles string.
-    Args:
-        smiles: smiles string. The bonding descriptors must be replaced by heavy atoms
-
-    Returns: canonical smiles
-
-    """
-    # Remove all heavy atoms
-    regex_pattern = r"\[Cf\:\d*\]|\[Bk\:\d*\]"
-    _s = re.sub(regex_pattern, "", smiles).replace("(", "").replace(")", "")
-
-    # If there is only a hydrogen, place the hydrogen followed by the heavy atom. This is because when rdkit
-    # canonicalizes, say [H][Cf], it generates [CfH], which messes the rest of the code
-    if _s == "[H]":
-        smiles = _s + list(re.findall(regex_pattern, smiles))[0]
-    # If it is only an Es
-    elif _s == "[Es]":
-        # Canonicalize
-        mol = Chem.MolFromSmiles(smiles)
-        smiles = Chem.MolToSmiles(mol)
-        # Remove Es and, if it was a branch, remove ( and )
-        smiles = smiles.replace("[Es]", "").replace("(", "").replace(")", "")
-    else:
-        mol = Chem.MolFromSmiles(smiles)
-        smiles = Chem.MolToSmiles(mol)
-
-    return smiles
-
-
-def separate_cycles(dfta):
-    """
-    This function disaggregates cycles. This means that it separates cycles that have been merged.
-
-    Procedure:
-        1) loop over all states, but ending states
-        2) If the state has one output and n inputs, replicate the state n times with one input at a time. Preserve the
-        output in all of them.
-        3) If the state has one input and n outputs, replicate the state n times with one output at a time. Preserve the
-        input in all of them.
-    Args:
-        dfta: deterministic finite tree automaton
-
-    Returns: dfta with separated cycles
-
-    """
-
-    # Initialize new state
-    new_state = max(list(dfta.transition_map.keys()))
-
-    # Generate empty tree automaton
-    new_dfta = tree_automata.TreeAutomata(transitions=[], states=[], end_states=dfta.end_states)
-
-    # Get non-ending states
-    nonending_states = [x for x in dfta.states if x not in dfta.end_states]
-
-    # Get transition map
-    new_transition_map = dfta.transition_map
-
-    # Do this untill no changes can be made
-    loop = True
-    while loop:
-        loop = False
-        new_states = []
-        # Check each state and apply the rules
-        for state in nonending_states:
-
-            # Number of input transitions
-            input_transitions = new_transition_map[state]["in"]
-            number_inputs = len(input_transitions)
-            # Number of output transitions
-            output_transitions = new_transition_map[state]["out"]
-            number_outputs = len(output_transitions)
-
-            # If it has many inputs and one output
-            if number_inputs > 1 and number_outputs == 1:
-                loop = True
-
-                # Set transition map to empty
-                new_transition_map[state]["in"] = []
-                new_transition_map[state]["out"] = []
-
-                # Output transition
-                output_transition = output_transitions[0]
-                # Remove old transition from transition map
-                if output_transition in new_transition_map[output_transition.output]["in"]:
-                    new_transition_map[output_transition.output]["in"].remove(output_transition)
-
-                # For each input, replicate the state with only 1 input and preserve the output
-                for tr in input_transitions:
-
-                    # Create new state
-                    new_state += 1
-                    # Add to non-ending states list
-                    new_states.append(new_state)
-
-                    # Set transition map to empty
-                    new_transition_map[new_state] = {"in": [], "out": []}
-
-                    # Edit output transition
-                    out_transition = copy.deepcopy(output_transition)
-                    out_transition.input = [x if x != state else new_state for x in out_transition.input]
-                    # Add output transition
-                    # new_dfta.transitions.append(out_transition)
-                    new_transition_map[new_state]["out"].append(out_transition)
-                    for s in out_transition.input:
-                        if output_transition in new_transition_map[s]["out"]:
-                            new_transition_map[s]["out"].remove(output_transition)
-                        if out_transition not in new_transition_map[s]["out"]:
-                            new_transition_map[s]["out"].append(out_transition)
-                    # Add transition as input to the output state
-                    new_transition_map[out_transition.output]["in"].append(out_transition)
-
-                    # Edit input transition
-                    in_transition = copy.deepcopy(tr)
-                    in_transition.output = new_state
-                    # Add input transition
-                    # new_dfta.transitions.append(in_transition)
-                    new_transition_map[new_state]["in"].append(in_transition)
-                    for s in tr.input:
-                        if tr in new_transition_map[s]["out"]:
-                            new_transition_map[s]["out"].remove(tr)
-                        if in_transition not in new_transition_map[s]["out"]:
-                            new_transition_map[s]["out"].append(in_transition)
-
-
-            # If it has one input and many outputs
-            elif number_inputs == 1 and number_outputs > 1:
-                loop = True
-
-                # Set transition map to empty
-                new_transition_map[state]["in"] = []
-                new_transition_map[state]["out"] = []
-
-                # Input transition
-                input_transition = input_transitions[0]
-                # Remove old transition from transition map
-                if input_transition in new_transition_map[input_transition.output]["in"]:
-                    new_transition_map[input_transition.output]["in"].remove(input_transition)
-
-                # For each output, replicate the state with only 1 output and preserve the input
-                for tr in output_transitions:
-
-                    # Create new state
-                    new_state += 1
-                    # Add to non-ending states list
-                    new_states.append(new_state)
-
-                    # Set transition map to empty
-                    new_transition_map[new_state] = {"in": [], "out": []}
-
-                    # Edit input transitions
-                    in_transition = copy.deepcopy(input_transition)
-                    in_transition.output = new_state
-                    # Add input transition
-                    # new_dfta.transitions.append(in_transition)
-                    new_transition_map[new_state]["in"].append(in_transition)
-                    # Add transition as output to the input states
-                    for s in in_transition.input:
-                        if input_transition in new_transition_map[s]["out"]:
-                            new_transition_map[s]["out"].remove(input_transition)
-                        if in_transition not in new_transition_map[s]["out"]:
-                            new_transition_map[s]["out"].append(in_transition)
-
-                    # Edit output transition
-                    out_transition = copy.deepcopy(tr)
-                    out_transition.input = [x if x != state else new_state for x in out_transition.input]
-                    # Add output transition
-                    # new_dfta.transitions.append(out_transition)
-                    # Update transition map for all inputs of the output transition
-                    for s in out_transition.input:
-                        if tr in new_transition_map[s]["out"]:
-                            new_transition_map[s]["out"].remove(tr)
-                        if out_transition not in new_transition_map[s]["out"]:
-                            new_transition_map[s]["out"].append(out_transition)
-                    if tr in new_transition_map[out_transition.output]["in"]:
-                        new_transition_map[out_transition.output]["in"].remove(tr)
-                    new_transition_map[out_transition.output]["in"].append(out_transition)
-
-            # Else, just add the transitions to the new dfta
-            # else:
-            #     new_dfta.transitions += input_transitions + output_transitions
-
-        # Add new states to nonending_states
-        nonending_states += new_states
-    # Update list of transitions of new_dfta
-    list_of_transitions = []
-    for key, value in new_transition_map.items():
-        for tr_in in value["in"]:
-            if tr_in not in list_of_transitions:
-                list_of_transitions.append(tr_in)
-        for tr_out in value["out"]:
-            if tr_out not in list_of_transitions:
-                list_of_transitions.append(tr_out)
-    # Remove duplicates
-    list_of_transitions = list(set(list_of_transitions))
-    # Update
-    new_dfta.transitions = list_of_transitions
-
-    # Create list of states and the transition map
-    new_dfta.states = new_dfta.get_states()
-    new_dfta.transition_map = new_transition_map #new_dfta.generate_transition_map()
-
-    return new_dfta
-
-
-def eliminate_noncyclic_nodes(dfta):
-
-    # Break non cyclic node
-    dfta = break_noncyclic_nodes(dfta)
-
-    # Get the transtions that have to be merged
-    merge = transitions_to_merge(dfta)
-    # Merge transitions
-    dfta = merge_transitions(dfta, merge)
-
-    return dfta
-
-
-def find_unbreakable_states(dfta):
-    """
-    This function finds the states that cannot be split into many states. If a state is the first one to be reached
-    within a loop through a graph traversal, it must not be split
-    Args:
-        dfta: tree_automaton
-
-    Returns: list of states that cannot be split and list of states that can be split
-
-    """
-
-    # Sort the state machine
-    dfta.sort()
-
-    # Convert into networkx graph
-    nx_dfta = dfta.DFTA_to_networkx()
-
-    # Get cycles from the graph
-    all_cycles = list(nx.simple_cycles(nx_dfta))
-
-    # Initialize list
-    not_to_break = []
-
-    for cycle in all_cycles:
-        # Get the position of the states in a cycle upon graph traversal
-        position_in_cycle = {s: dfta.states.index(s) for s in cycle if s in dfta.states}
-        # Sort and get the state that appears first
-        position_in_cycle = sorted(position_in_cycle.items(), key=lambda item: item[1])
-        # Get the first
-        state = position_in_cycle[0][1]
-        not_to_break.append(state)
-
-    # Accepting states and the ones resulted by starting transitions cannot be broken
-    not_to_break += dfta.end_states
-    for tr in dfta.transitions:
-        if tr.input == []:
-            not_to_break.append(tr.output)
-    # Remove duplicates
-    not_to_break = list(set(not_to_break))
-
-    # All other states can be split
-    to_break = [s for s in dfta.states if s not in not_to_break]
-
-    return not_to_break, to_break
-
-
-def old_find_unbreakable_states(dfta):
-    """
-    This function finds the states that cannot be split into many states. A state that has a self loop cannot be split.
-    Also, if a loop starts and ends at the same state, it cannot be split. Therefore, if state S is in a loop with only
-    states that cannot be split, it also cannot be split
-    Args:
-        dfta: tree automaton
-
-    Returns: list of states that cannot be split and list of states that can be split
-
-    """
-
-    # Convert into networkx graph
-    nx_dfta = dfta.DFTA_to_networkx()
-
-    # Get cycles from the graph
-    all_cycles = list(nx.simple_cycles(nx_dfta))
-
-    # Separate states into unbreakable and breakable
-    old_state_classes = [[], []]
-    # Initialize with the states that have a self-loop
-    state_classes = [[], []]
-    for cycle in all_cycles:
-        if len(cycle) == 1:
-            state_classes[0] += cycle    # First list is a list of states that cannot be broken
-    for cycle in all_cycles:
-        if len(cycle) != 1:
-            state_classes[1] += [x for x in cycle if x not in state_classes[0]]
-    # Sort classes
-    state_classes[0] = sorted(list(set(state_classes[0])))
-    state_classes[1] = sorted(list(set(state_classes[1])))
-
-    # List all states that have not been checked yet
-    states_to_check = [n for n in nx_dfta.nodes if nx_dfta.nodes[n]["is_state"] and n not in state_classes[0]]
-
-    # Do until no changes are made
-    while old_state_classes != state_classes:
-
-        old_state_classes = copy.deepcopy(state_classes)
-
-        for state in states_to_check:
-            # Start assuming it can be split
-            breakable = True
-            # Get all cycles that contain the state
-            cycles_with_state = [x for x in all_cycles if state in x]
-            # Loop over all cycles until you find out that the state cannot be broken
-            for cycle in cycles_with_state:
-                # If all states in a cycle cannot be split, state also cannot be split
-                states_breakable = all([x in state_classes[1] for x in cycle if x != state])
-                if not states_breakable:
-                    breakable = False
-                    break
-            if not breakable:
-                # Change state class
-                state_classes[0].append(state)
-                state_classes[1].remove(state)
-                # Remove from states to check
-                states_to_check.remove(state)
-
-        # Sort classes
-        state_classes[0] = sorted(state_classes[0])
-        state_classes[1] = sorted(state_classes[1])
-
-    return state_classes
-
-
-def break_noncyclic_nodes(dfta):
-    """
-    This function splits the nodes that do not have a self-loop.
-    Args:
-        dfta: tree automaton
-
-    Returns: tree automaton
-
-    """
-
-    # Initialize new state
-    new_state = max(list(dfta.transition_map.keys()))
-
-    # Get non-ending states
-    nonending_states = [x for x in dfta.states if x not in dfta.end_states]
-
-    # Get states that cannot be split
-    do_not_split, _ = find_unbreakable_states(dfta)
-
-    # Get transition map
-    new_transition_map = dfta.transition_map
-
-    # States to remove
-    states_to_remove = []
-
-    # Check each state and apply the rules
-    for state in nonending_states:
-
-        # Number of input transitions
-        input_transitions = new_transition_map[state]["in"]
-        # Number of output transitions
-        output_transitions = new_transition_map[state]["out"]
-
-        # If there is a self-loop, skip it
-        # self_loops = [x for x in output_transitions if x.output == state]
-        # if not self_loops:
-        #     continue
-        if state in do_not_split:
-            continue
-
-        # Remove that state later
-        states_to_remove.append(state)
-
-        # For each combination of input and output, create a new state with single input and single output
-        for input_tr in input_transitions:
-            for output_tr in output_transitions:
-
-                # Create new state
-                dfta.states.append(new_state)
-                new_transition_map[new_state] = {"in": [], "out": []}
-
-                # Create transition to the state
-                new_input_transition = copy.deepcopy(input_tr)
-                new_input_transition.output = new_state
-                # Add new input transition
-                dfta.transitions.append(new_input_transition)
-                # Add to new transition map
-                for s in new_input_transition.input:
-                    new_transition_map[s]["out"].append(new_input_transition)
-                new_transition_map[new_input_transition.output]["in"].append(new_input_transition)
-
-                # Create transition to the state
-                new_output_transition = copy.deepcopy(output_tr)
-                new_output_transition.input = [x if x != state else new_state for x in new_output_transition.input]
-                # Add new output transition
-                dfta.transitions.append(new_output_transition)
-                # Add to new transition map
-                for s in new_output_transition.input:
-                    new_transition_map[s]["out"].append(new_output_transition)
-                new_transition_map[new_output_transition.output]["in"].append(new_output_transition)
-
-                # Update new_state
-                new_state += 1
-
-    # Remove states
-    dfta.states = [x for x in dfta.states if x not in states_to_remove]
-    for s in states_to_remove:
-        del new_transition_map[s]
-    # Remove transitions
-    states_to_remove = set(states_to_remove)
-    transitions_to_remove = [tr for tr in dfta.transitions if (tr.output in states_to_remove) or
-                             (not set(tr.input).isdisjoint(states_to_remove))]
-    dfta.transitions = [tr for tr in dfta.transitions if tr not in transitions_to_remove]
-    # Remove transitions from transition map
-    for state, map in new_transition_map.items():
-        map["in"] = list(filter(lambda x: x not in transitions_to_remove, map["in"]))
-        map["out"] = list(filter(lambda x: x not in transitions_to_remove, map["out"]))
-        new_transition_map[state] = map
-
-    # Update transition map
-    dfta.transition_map = new_transition_map
-
-    return dfta
 
 
 # Main -----------------------------------------------------------------------------------------------------------------

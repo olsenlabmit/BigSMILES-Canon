@@ -1552,7 +1552,7 @@ class TreeAutomata:
             _state_rank = [start_state]
             _transition_rank = [start_transition]
             _transition_mass = [molar_wt]
-            _transition_smiles = [alph_smiles] # TODO did this today
+            _transition_smiles = [alph_smiles]  # TODO did this today
 
             # Traverse the state machine
             self.traverse(root=start_state, state_rank=_state_rank, transition_rank=_transition_rank,
@@ -1572,7 +1572,8 @@ class TreeAutomata:
             #     transition_mass = _transition_mass
 
         # Choose the longest, heaviest rank
-        ranks = sorted(ranks, key=lambda x: [x[0], x[-1]], reverse=True)
+        ranks = sorted(ranks, key=lambda x: [x[0], x[-1]], reverse=True) # TODO did this today
+        # ranks = sorted(ranks, key=lambda x: x[0], reverse=True)
         chosen_rank = ranks[0]
         state_rank = chosen_rank[1]
         transition_rank = chosen_rank[2]
@@ -1669,7 +1670,7 @@ class TreeAutomata:
         next_transition_mass = None
         next_state = None
         next_transition_smiles = None  # TODO did this today
-        for tr, direction, mass, _smiles in possible_transitions:
+        for tr, direction, mass, _ in possible_transitions:
             # If the transition has already been chosen, skip it
             if tr in transition_rank:
                 continue
@@ -1697,7 +1698,7 @@ class TreeAutomata:
                 # Choose the transition
                 next_transition = tr
                 next_transition_mass = mass
-                next_transition_smiles = _smiles # TODO did this today
+                next_transition_smiles = _smiles  # TODO did this today
                 # If the transition has no input (starting transition), just add the transition and mass to lists
                 if not tr.input:
                     transition_rank.append(next_transition)
