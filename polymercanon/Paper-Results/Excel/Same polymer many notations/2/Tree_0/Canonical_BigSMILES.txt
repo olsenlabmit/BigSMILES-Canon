@@ -1,0 +1,2 @@
+Initial: CCO{[>][>]OCC[<][<]}CCO 
+Canonical: [H]CCOCCO{[<][>]CCO[<][>]}[H] 

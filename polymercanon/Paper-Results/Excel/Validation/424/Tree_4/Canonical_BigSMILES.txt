@@ -1,0 +1,2 @@
+Initial: C([#R])([#R])([#R])([#R]).{#R=C{[<][>]OC(=O)CCCCC[<][>]}OC(=O)C(C)(C)Br} 
+Canonical: [H]CC(Br)(C)C(=O)OC{[<][>]CCCCC(=O)OC[<][>]}C(COC(=O){[<][>]CCCCCOC(=O)[<][>]}C(Br)(C)C[H])(COC(=O){[<][>]CCCCCOC(=O)[<][>]}C(Br)(C)C[H])COC(=O){[<][>]CCCCCOC(=O)[<][>]}C(Br)(C)C[H] 

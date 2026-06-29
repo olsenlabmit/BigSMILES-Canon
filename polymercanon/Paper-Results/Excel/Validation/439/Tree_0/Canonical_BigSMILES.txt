@@ -1,0 +1,2 @@
+Initial: {[][<]c1cc([>])cc([>])c1;[<]Br,[>]B(O)O[]} 
+Canonical: [H]OB(O){[<][>]c(cc([<])c1)cc1[<][>]}Br 

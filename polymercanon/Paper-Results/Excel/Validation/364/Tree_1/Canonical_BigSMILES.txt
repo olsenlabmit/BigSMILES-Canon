@@ -1,0 +1,2 @@
+Initial: C=C{[>][<]C1CC(C2CN(C(C)(C)C)[Sn](Cl)(Cl)N(C(C)(C)C)CC12)C=C[>][<]}{[>][<]C(C1)CCC1C=C[>][<]}C(C)(C)(C) 
+Canonical: {[][>1]C(C(C4CN5C(C)(C)C)CN(C(C)(C)C)[Sn]5(Cl)Cl)CC4C=C[<1];[H]CC(C)(C)C=C[<1],[H]CC(C)(C)C=CC(CC2)CC2{[<][>]C=CC(CC2)CC2[<][>]}C=C[<1],[>1][H][]} 

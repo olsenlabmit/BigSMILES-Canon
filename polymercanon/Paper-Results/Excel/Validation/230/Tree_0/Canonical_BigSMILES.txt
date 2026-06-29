@@ -1,0 +1,2 @@
+Initial: {[][$]CC(c1c(Cl)c(Cl)c(Cl)cc1)[$],[$]CC(c1c(Cl)c(Cl)cc(Cl)c1)[$],[$]CC(c1c(Cl)c(Cl)ccc1(Cl))[$],[$]CC(c1cc(Cl)c(Cl)c(Cl)c1)[$],[$]CC(c1c(Cl)cc(Cl)cc1(Cl))[$][]} 
+Canonical: {[][>]CC(c(cc2Cl)cc(Cl)c2Cl)[<],[>]C(c(cc1Cl)cc(Cl)c1Cl)C[<],[>]CC(c(c(Cl)c4)c(cc4Cl)Cl)[<],[>]C(c(c(Cl)c%16)c(cc%16Cl)Cl)C[<],[>]CC(c(cc8Cl)c(c(c8)Cl)Cl)[<],[>]C(c(cc%16Cl)c(c(c%16)Cl)Cl)C[<],[>]CC(c(c(Cl)c%16Cl)ccc%16Cl)[<],[>]C(c(c(Cl)c%16Cl)ccc%16Cl)C[<],[>]CC(c(c(c%16Cl)Cl)c(cc%16)Cl)[<],[>]C(c(c(c%16Cl)Cl)c(cc%16)Cl)C[<][]} 

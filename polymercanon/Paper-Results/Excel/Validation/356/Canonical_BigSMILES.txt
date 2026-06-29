@@ -1,0 +1,5 @@
+Initial: {[][$]CC(c1ccccc1)[$][$]}{[$][$]C\C=C/C[$],[$]C\C=C\C[$],[$]CC(C=C)[$][]} 
+Canonical: {[][>]CC(c(cc4)ccc4)[<],[>]C(c(cc2)ccc2)C[<][>]}{[<][>]C/C=C/C[<],[>]C/C=C\C[<],[>]CC(C=C)[<],[>]C(C=C)C[<][]}
+Other options:
+{[][>]C/C=C/C[<],[>]C/C=C\C[<],[>]CC(C=C)[<],[>]C(C=C)C[<][>]}{[<][>]CC(c(cc2)ccc2)[<],[>]C(c(cc1)ccc1)C[<][]}
+{[][>]C/C=C/C[<],[>]C/C=C\C[<],[>]CC(C=C)[<],[>]C(C=C)C[<][>]}{[<][>]CC(c(cc2)ccc2)[<],[>]C(c(cc1)ccc1)C[<][]}

@@ -1,0 +1,2 @@
+Initial: {[][$]CC(CCC1CCCCC1)[$][]} 
+Canonical: {[][>]CC(CCC(CC2)CCC2)[<],[>]C(CCC(CC1)CCC1)C[<][]} 

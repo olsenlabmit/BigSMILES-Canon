@@ -1,0 +1,2 @@
+Initial: CC(C)(C){[$][$]CC(C)(C)[$][$]}CC(C)CSCCNC(=O)OC(C)(C)C 
+Canonical: [H]CC(C)(C){[<][>]CC(C)(C)[<],[>]C(C)(C)C[<][>]}CC(C)CSCCNC(=O)OC(C)(C)C[H] 

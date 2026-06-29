@@ -16,6 +16,7 @@ import networkx as nx
 import copy
 import string
 import itertools
+import datetime
 import os
 RDLogger.DisableLog('rdApp.*')
 
@@ -2344,6 +2345,48 @@ def canonicalize_polyelectrolyte(bigsmiles, output_folder, plot):
 if __name__ == "__main__":
 
     # # Read validation dataset
+    # filename = "Validation"  #"Same polymer many notations" #
+    # ext = ".xlsx"
+    # dataset = pd.read_excel(filename + ext)
+    #
+    # output_folder = f"Paper-Results\\Excel\\{filename}"
+    # duration_list = []
+    # # If directory does not exist, create it
+    # try:
+    #     os.makedirs(output_folder)
+    # except:
+    #     pass
+    # for index, row in dataset.iterrows():
+    #     try:
+    #         print(f"Canonicalizing row {index}")
+    #         start = datetime.datetime.now()
+    #
+    #         subfolder_name = f"{index}"
+    #         bigsmiles = row["Input"]
+    #         canonical = canonicalize_bigsmiles(bigsmiles=bigsmiles,
+    #                                            output_folder=os.path.join(output_folder, subfolder_name),
+    #                                            plot=True)
+    #         dataset.loc[index, "Canonical"] = canonical
+    #         # Calculate duration
+    #         end = datetime.datetime.now()
+    #         duration = (end - start).seconds
+    #         duration_list.append([bigsmiles, canonical, duration])
+    #     except Exception as exc:
+    #         print(f"Error index {index}")
+    #         print(exc)
+    #     # Save answers
+    #     dataset.to_excel(os.path.join(output_folder, filename + ext))
+    #     # Save duration
+    #     df_duration = pd.DataFrame(duration_list, columns=["Input", "Canonical", "Duration (s)"])
+    #     df_duration.to_excel(os.path.join(output_folder, "Duration.xlsx"))
+    #
+    # # Save answers
+    # dataset.to_excel(os.path.join(output_folder, filename + ext))
+    # # Save duration
+    # df_duration = pd.DataFrame(duration_list, columns=["Input", "Canonical", "Duration (s)"])
+    # df_duration.to_excel(os.path.join(output_folder, "Duration.xlsx"))
+
+    # # Read validation dataset
     # filename = "Canonicalization_Validation" #"Validation_dataset"  #   "Validation_dataset_second_canonicalization" # "Same polymer many notations"    # "Validation_tacticity" #
     # ext = ".xlsx"
     # dataset = pd.read_excel(filename + ext)
@@ -2378,9 +2421,18 @@ if __name__ == "__main__":
 
 
     validation_set = [
-        # ['dendrimer', '{[][>1]C(=O)CCN(CCN[<1])CCC(=O)[>1][]}']
-        # ["endgroup_path", "CC(C(=O)OCCCC)(Cl){[<][>]CC(C(=O)OCCCC)(Cl)[<][]}"],
         # ["chirality1", "{[][<]C[C@@H](C)[>][]}"],
+        # # ["polyelectrolyte", "{[][$]CC(C)(C(=O)[O-])[$].[Na+][]}"],
+        # ["macrocycle", "C1C{[$][$]CC(c1ccccc1)[$][$]}CCCNC(=O)C1"],
+        # ["Block with initiator", "CCC(C){[$][$]CC(c1ccccc1)[$][$]}CCO{[>][<]CC(C)OC(=O)O[>][<]}[H]"],
+        # ["12-a", "CCO{[>][<]CCO[>][<]}CCO"],
+        # ["12-b", "{[][$]CC[$],[$]CC(CC)[$][]}"],
+        # ["12-c", "{[][<]CCO[>][<]}CCO{[$][$]CC(c1ccccc1)[$][]}"],
+        # ["13-a", "{[][<]N=Cc(cc1)ccc1C=NCCC[Si]O{[<][>][Si]O[<][>]}[Si]CCC[>][]}"],
+        # ["13-b", "COCCO{[>][<]C(O{[<][>]CCO[<][>]}C)CCCCCO[>],[<]C(=O)CCCCCO[>][<]}"],
+        # ["14-a", "C([#Arm])([#Arm])([#Arm])[#Arm].{#Arm=CO{[<][>]CCO[<][>]}}"],
+        # ["14-b", "{[][<]C(=O)CC(=O)[<],[>]OCC(CO[>])CO[>][]}"],
+        # ["15-a", "{[>][<]CCO[>][<]}"],
         # ["one_atom_backbone", "{[>][<]CC[>3],[<3]O[>][<]}"],
         # ["test_new_explicit_atom_ids", "{[>][<]C[>][<]}N{[>][<]O[>][<]}"],
         # ["test_many_descriptors_2", "N([#R])([#R])CCCCN([#R])([#R]).{#R={[>][<]CCCN([>])([>])[]}}"],
@@ -2406,14 +2458,10 @@ if __name__ == "__main__":
         # ["test_diblock", "{[][<]CCO[>][<]}CCO{[$][$]CC(c1ccccc1)[$][]}"],
         # ["test_graft", "COCCO{[>][<]C(O{[<][>]CCO[<][>]}C)CCCCCO[>],[<]C(=O)CCCCCO[>][<]}"],
         # ["test_network", "{[][$]CC=CC[$],[$]CC([<])C([<])C[$],[>]{[$][$]SS[$][$]}[>][]}"],
-        # ["test_network2", "{[][<2]C([<])([<])[>2],[>]{[>3][<3]SS[>3][<3]}[>][]}"],
-        # ["test_other_dendrimer", "{[][>]C(=O)CCN(CCN[<])CCC(=O)[>][]}"],
+        # ["test_dendrimer", "{[][>]C(=O)CCN(CCN[<])CCC(=O)[>][]}"],
         # ["test_star", "C([#Arm])([#Arm])([#Arm])[#Arm].{#Arm=CO{[<][>]CCO[<][>]}}"],
         # ["test_network2", "{[][<]C(=O)CCC(=O)[<],[>]OCCC(O[>])CO[>][]}"],
         # ["test_network3", "{[][<]C(=O)CC(=O)[<],[>]OCC(CO[>])CO[>][]}"],
-        # ["test_network4", "{[][$]CC([<])C([<])C[$],[>]{[$][$]S[$][$]}[>][]}"],
-        # ["test_network5", "{[][$]C([<])[$],[>]{[$][$]S[$][$]}[>][]}"],
-        # ["test_ficticious_dendrimer", "{[][>]OC(N[>])S[>],[<][Si][<][]}"],
         # ["test_star2", "OCCCCCC(=O){[>][<]OCCCCCC(=C)[>][<]}OCc1cc([#Arm1])cc([#Arm2])c1.{#Arm1=c2nnn(CC{[$][$]CC(c3ccccc3)[$][$]}CCC)c2}.{#Arm2=c4nnn({[>][<]CCO[>][<]}C)c4}"],
         # ["test_dendrimer", "{[][>2]C(=O)CC(=O)[<1],[>3]OCC(CO[<2])CO[<2],[>2]C(=O)CC(=O)[<3],[>3]OCC(CO[<1])CO[<1][>1]}"],
         # ["test_block", "{[][<]OO[>][>]}{[>][<]CC[>][]}"],
@@ -2448,13 +2496,11 @@ if __name__ == "__main__":
         # ["Graft polymer", "COCCO{[>][<]C(O{[<][>]CCO[<][>]}C)CCCCCO[>],[<]C(=O)CCCCCO[>][<]}"],
         # ["6-armed dendrimer", "N(CCN([#R])([#R]))(CCN([#R])([#R]))(CCN([#R])([#R])).{#R=CCC(=O){[>][<]NCCN(CCC(=O)[>])CCC(=O)[>][]}}"],
         # ["Dendrimer", "{[][<]C(=O)CC(=O)[<],[>]OCC(CO[>])CO[>][]}"],
-        # ["Dendrimer_2", "{[][<]N[<],[>]C([>])[>][]}"],
-        ["4-armed star polymer_1", "C([#Arm])([#Arm])([#Arm])[#Arm].{#Arm=CO{[<][>]CCO[<][>]}}"],
-        ["4-armed star polymer_@", "C([#Arm])([#Arm])([#Arm])[#Arm].{#Arm={[<][>]COC[<][>]}CO}"],
+        # ["4-armed star polymer", "C([#Arm])([#Arm])([#Arm])[#Arm].{#Arm=CO{[<][>]CCO[<][>]}}"],
         # ["3-armed star polymer", "OCCCCCC(=O){[>][<]OCCCCCC(=C)[>][<]}OCc1cc([#Arm1])cc([#Arm2])c1.{#Arm1=c2nnn(CC{[$][$]CC(c3ccccc3)[$][$]}CCC)c2}.{#Arm2=c4nnn({[>][<]CCO[>][<]}C)c4}"],
         # ["Vulcanized polymer", "{[][$]CC=CC[$],[$]CC([<])C([<])C[$],[>]{[$][$]SS[$][$]}[>][]}"],
         # ["Polymer network", "{[][>]C(=O)CCCCCCC(=O)[>],C([#R])([#R])OC([#R])([#R])[]}.{#R=COC(CO{[<][>]CCO[<][>]}CCN[<])(CO{[<][>]CCO[<][>]}CCN[<])}"],
-        # ["macrocycle1", "C1CO{[>][<]CCO[>][<]}CCO1"],
+        ["macrocycle1", "C1CO{[>][<]CCO[>][<]}CCO1"],
         # ["macrocycle2", "O1CC{[>][<]OCC[>][<]}OCC1"],
         # ["test", "{[][>0]CC(c(cc1)ccc1)[<0],[>0]C(c(cc1)ccc1)C[<0];[H]{[<][>]CC(C)=CC[<][>]}[<0][]}"],
         # ["block4", "{[>][<]CCO[>][<]}CCO{[$][$]CC(c1ccccc1)[$][]}"],
@@ -2477,7 +2523,7 @@ if __name__ == "__main__":
     #
     ]
 
-    output_folder = "Validation\\Validation_55\\Paper"
+    output_folder = "Validation\\Tests"
     # If directory does not exist, create it
     try:
         os.makedirs(output_folder)
@@ -2489,6 +2535,7 @@ if __name__ == "__main__":
     for index, element in enumerate(validation_set):
         subfolder_name = element[0]
         bigsmiles = element[1]
+        print(f"Canonicalizing {bigsmiles}")
         # Canonicalize
         canonical = canonicalize_bigsmiles(bigsmiles=bigsmiles,
                                            output_folder=os.path.join(output_folder, subfolder_name),

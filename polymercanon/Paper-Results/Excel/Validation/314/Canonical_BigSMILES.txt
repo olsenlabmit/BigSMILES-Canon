@@ -1,0 +1,4 @@
+Initial: O{[>][<]C(=O)C(C)O[>][<]} 
+Canonical: [H]O{[<][>]C(C)C(=O)O[<][>]}[H]
+Other options:
+[H]O{[<][>]C(=O)C(C)O[<][>]}[H]

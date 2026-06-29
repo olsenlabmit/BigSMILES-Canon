@@ -1,0 +1,2 @@
+Initial: {[][$]CC(c(cc1)ccc1CCCC{[>][<]OCC[>][<]}N)[$],[$]CC(c1ccccc1)[$][]} 
+Canonical: {[][>]CC(c(cc4)ccc4)[<],[>]C(c(cc2)ccc2)C[<],[>]CC([<])c(cc1)ccc1CCCC{[<][>]OCC[<][>]}N[H],[>]C(C[<])c(cc1)ccc1CCCC{[<][>]OCC[<][>]}{[<][>]OCC[<][>]}N[H][]} 

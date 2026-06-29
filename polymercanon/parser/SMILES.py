@@ -151,7 +151,7 @@ class SMILES:
 
     def addAtom(self,res,prevAtom,prevBond,pos):
         # add the new atom into the graph
-        if 'organic' in res.keys():
+        if 'organic' in res.keys():    # TODO replaced orgainc by organic did this today
             _type = 'organic'
         elif 'bracket_atom' in res.keys():
             _type = 'bracket_atom'

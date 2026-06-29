@@ -197,7 +197,7 @@ class BigSMILES(SMILES):
                             trailing_bond = res.ringbondtype
                         else:
                             if prevBond == None:
-                                trailing_bond = ''
+                                trailing_bond = '' #'-' TODO did this today
                                 prevBond = trailing_bond
                             else:
                                 trailing_bond = prevBond
@@ -244,7 +244,7 @@ class BigSMILES(SMILES):
                         else:
                             #print(prevBond)
                             if prevBond == None:
-                                trailing_bond = ''
+                                trailing_bond = ''#'-' todo did this today
                                 prevBond = trailing_bond
                             else:
                                 trailing_bond = prevBond

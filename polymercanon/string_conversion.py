@@ -229,7 +229,7 @@ def unfold_cycles(dfta, output_folder=None):
 
     # Do this until no changes can be made
     loop = True
-    count_loop = 0 # TODO did this today added this to break the loop after 50 iterations
+    count_loop = 0
     while loop:
 
         # Plot if required
@@ -392,7 +392,7 @@ def unfold_cycles(dfta, output_folder=None):
 
         states_to_split = choose_states_to_split(new_dfta, nx_graph)
 
-        count_loop += 1 # TODO did this today
+        count_loop += 1  # TODO did this today
         if count_loop > 100:
             loop = False
 
@@ -1054,6 +1054,7 @@ def define_backbone(nx_dfta, adjacent_cycles, starts, ends):
         number_of_end_states = len([n for n in path if n in ends])
         mass = 0
         weighted_mass = 0
+        alphabet_sequence = []  # TODO did this today
         # Calculate the mass and weighted mass of the path
         for i, node in enumerate(path):
             # If it is an atom add its mass
@@ -1065,11 +1066,14 @@ def define_backbone(nx_dfta, adjacent_cycles, starts, ends):
                 mass += _mass
                 # Increment weighted mass
                 weighted_mass += _mass * (i+1) ** 2
+                # Add alphabet sequence TODO did this today
+                alphabet_sequence.append(Chem.MolToSmiles(Mol))
         # Add to path_masses
-        path_rank.append([path, number_of_end_states, mass, weighted_mass])
+        path_rank.append([path, number_of_end_states, mass, weighted_mass, alphabet_sequence])
 
-    # Sort paths
-    path_rank = sorted(path_rank, key=lambda x: [x[1], x[2], x[3]], reverse=True)
+    # Sort paths TODO did this today to break degeneracy
+    path_rank = sorted(path_rank, key=lambda x: [x[1], x[2], x[3], x[4]], reverse=True)
+    # path_rank = sorted(path_rank, key=lambda x: [x[1], x[2], x[3]], reverse=True)
 
     # Get the first path
     backbone = path_rank[0][0]

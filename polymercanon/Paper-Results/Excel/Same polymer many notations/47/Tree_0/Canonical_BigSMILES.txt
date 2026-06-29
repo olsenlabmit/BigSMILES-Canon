@@ -1,0 +1,2 @@
+Initial: {[]C(O[<])C[>][]} 
+Canonical: {[][>]CCO[<][]} 

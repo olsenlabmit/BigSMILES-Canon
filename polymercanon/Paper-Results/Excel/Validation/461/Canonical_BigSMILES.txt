@@ -1,0 +1,6 @@
+Initial: {[>][<]OCC(C)(C(=O)OCCOC)COC(=O)[>][<]}OCCCCCCOc(cc1)ccc1C(=O)Oc(cc1(C))ccc1OC(=O)c(cc1)ccc1OCCCCCCO{[>][<]C(=O)OCC(C)(C(=O)OCCOC)CO[>][<]} 
+Canonical: [H]{[<][>]C(=O)OCC(C)(C(OCCOC)=O)CO[<][>]}OCCCCCCOc(cc4)ccc4C(=O)Oc(c(c2)C)ccc2OC(=O)c(cc1)ccc1OCCCCCCO{[<][>]C(=O)OCC(C)(C(OCCOC)=O)CO[<][>]}[H]
+Other options:
+[H]OC{[<][>]C(C)(C(OCCOC)=O)COC(=O)OC[<][>]}CCCCCOc(cc4)ccc4C(=O)Oc(cc2)cc(C)c2OC(=O)c(cc1)ccc1OCCCCCCO{[<][>]C(=O)OCC(C)(C(OCCOC)=O)CO[<][>]}[H]
+[H]OC{[<][>]C(C)(C(OCCOC)=O)COC(=O)OC[<][>]}CCCCCOc(cc4)ccc4C(=O)Oc(cc2)cc(C)c2OC(=O)c(cc1)ccc1OCCCCCCO{[<][>]OCC(C)(C(OCCOC)=O)COC(=O)[<][>]}[H]
+[H]OC{[<][>]C(C)(C(OCCOC)=O)COC(=O)OC[<][>]}CCCCCOc(cc4)ccc4C(=O)Oc(c(c2)C)ccc2OC(=O)c(cc1)ccc1OCCCCCCO{[<][>]C(=O)OCC(C)(C(OCCOC)=O)CO[<][>]}[H]

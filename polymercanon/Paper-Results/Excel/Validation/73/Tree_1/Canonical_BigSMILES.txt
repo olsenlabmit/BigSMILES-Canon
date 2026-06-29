@@ -1,0 +1,2 @@
+Initial: {[][<]CCC[Si](C)(c1ccc(N(C)C)cc1)[>][]} 
+Canonical: {[][>]CCC[Si](C)(c(cc1)ccc1N(C)C)[<][]} 

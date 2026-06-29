@@ -1,0 +1,2 @@
+Initial: COCCOCCO{[>][<]CCO[>][<]}{[>][<]C(CC)CO[>][<]}[H] 
+Canonical: [H]COCCOCC{[<][>]OCC[<][>]}O{[<][>]C(CC)CO[<][>]}[H] 

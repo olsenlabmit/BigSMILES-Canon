@@ -1,0 +1,2 @@
+Initial: CC([#R])([#R])C(=O)O{[>][<]CCO[>][<]}C(=O)C([#R])([#R])C.{#R=COC(=O)C(C){[$][$]CC(c1ccccc1)[$][$]}Br} 
+Canonical: Br{[<][>]CC(c(cc4)ccc4)[<],[>]C(c(cc2)ccc2)C[<][>]}C(C)C(=O)OCC(C)(C(=O)O{[<][>]CCO[<][>]}C(=O)C(C)(COC(=O)C(C){[<][>]CC(c(cc8)ccc8)[<],[>]C(c(cc1)ccc1)C[<][>]}Br)COC(=O)C(C){[<][>]CC(c(cc8)ccc8)[<],[>]C(c(cc1)ccc1)C[<][>]}Br)COC(=O)C(C){[<][>]CC(c(cc8)ccc8)[<],[>]C(c(cc1)ccc1)C[<][>]}{[<][>]CC(c(cc8)ccc8)[<],[>]C(c(cc1)ccc1)C[<][>]}Br 

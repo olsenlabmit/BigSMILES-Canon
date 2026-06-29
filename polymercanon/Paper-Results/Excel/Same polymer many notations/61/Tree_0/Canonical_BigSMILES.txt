@@ -1,0 +1,2 @@
+Initial: C([#Arm])([#Arm])([#Arm])[#Arm].{#Arm=CO{[<][>]CCO[<],[>]CCO[<][>]}} 
+Canonical: [H]OC{[<][>]COC[<][>]}C(CO{[<][>]CCO[<][>]}[H])(CO{[<][>]CCO[<][>]}[H])CO{[<][>]CCO[<][>]}[H] 

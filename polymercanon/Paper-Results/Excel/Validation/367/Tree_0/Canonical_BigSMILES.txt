@@ -1,0 +1,2 @@
+Initial: c1ccccc1C=C{[>][>]C=CC1C(C3/C=C\C1c2c(OC)ccc(OC)c23)[<][<]}{[>][<]C(C1)CC(CO[Si](C)(C)C)C1C=C[>][<]}C(C)(C)(C) 
+Canonical: {[][>1]C(CC2CO[Si](C)(C)C)CC2C=C[<1];[H]c(cc%10)c(cc%10)C=C[<1],[H]c(cc%10)c(cc%10)C=CC(C(C=%10)c%11c(c%12)OC)C(C(C=%10)c%11c(c%12)OC){[<][>]C=CC(C(C=%10)c%11c(c%12)OC)C(C(C=%10)c%11c(c%12)OC)[<][>]}C=C[<1],[>1]C(C)(C)C[H][]} 

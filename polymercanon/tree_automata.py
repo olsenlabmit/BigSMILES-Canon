@@ -1280,7 +1280,7 @@ class TreeAutomata:
         if plot:
             self.plot(tree_name=f"MFTA_{tree_name}", output_folder=output_folder)
 
-    def plot(self, tree_name="tree", output_folder="Output", draw_alphabet_function=None, state_labels=True, *args, **kwargs):
+    def plot(self, tree_name="tree", output_folder="Output", draw_alphabet_function=None, state_labels=True, *args, **kwargs): 
         """
         This function plots the tree automaton
         Args:
@@ -1543,22 +1543,25 @@ class TreeAutomata:
                            Chem.MolToSmiles(Chem.MolFromSmiles("[Es][*:2]"))]
             if Chem.MolToSmiles(Chem.MolFromSmiles(start_transition.smiles)) in forms_of_Es:
                 molar_wt = 0
+                alph_smiles = ""  # TODO did this today
             else:
                 molar_wt = ExactMolWt(Chem.MolFromSmiles(start_transition.smiles))
+                alph_smiles = Chem.MolToSmiles(Chem.MolFromSmiles(start_transition.smiles))  # TODO did this today
 
             # Initiate the lists
             _state_rank = [start_state]
             _transition_rank = [start_transition]
             _transition_mass = [molar_wt]
+            _transition_smiles = [alph_smiles]  # TODO did this today
 
             # Traverse the state machine
             self.traverse(root=start_state, state_rank=_state_rank, transition_rank=_transition_rank,
-                          transition_mass=_transition_mass)
+                          transition_mass=_transition_mass, transition_smiles=_transition_smiles) # TODO did this today
 
             # Calculate score
             _score = sum([m * (i + 1) for i, m in enumerate(_transition_mass)])
 
-            ranks.append([_score, _state_rank, _transition_rank])
+            ranks.append([_score, _state_rank, _transition_rank, _transition_smiles])  # TODO did this today
             # # Compare score to update lists
             # if _score > score:
             #     # Update score
@@ -1569,7 +1572,8 @@ class TreeAutomata:
             #     transition_mass = _transition_mass
 
         # Choose the longest, heaviest rank
-        ranks = sorted(ranks, key=lambda x: x[0], reverse=True)
+        ranks = sorted(ranks, key=lambda x: [x[0], x[-1]], reverse=True) # TODO did this today
+        # ranks = sorted(ranks, key=lambda x: x[0], reverse=True)
         chosen_rank = ranks[0]
         state_rank = chosen_rank[1]
         transition_rank = chosen_rank[2]
@@ -1601,7 +1605,7 @@ class TreeAutomata:
         # Update transition map
         self.generate_transition_map()
 
-    def traverse(self, root, state_rank, transition_rank, transition_mass):
+    def traverse(self, root, state_rank, transition_rank, transition_mass, transition_smiles): # TODO did this today: added transition_smiles
         """
         Traverse the graph and generates a list of sorted states, transitions and transition mass.
         Given a node, the graph traversal will prioritize output transitions with the lowest molar mass. To untie,
@@ -1665,6 +1669,7 @@ class TreeAutomata:
         next_transition = None
         next_transition_mass = None
         next_state = None
+        next_transition_smiles = None  # TODO did this today
         for tr, direction, mass, _ in possible_transitions:
             # If the transition has already been chosen, skip it
             if tr in transition_rank:
@@ -1676,25 +1681,29 @@ class TreeAutomata:
                 next_transition = tr
                 next_transition_mass = mass
                 next_state = tr.output
+                next_transition_smiles = _smiles  # TODO did this today: transition_smiles
                 # Update lists
                 if next_state not in state_rank:  # Only add a state that has not been added
                     state_rank.append(next_state)
                 if next_transition not in transition_rank:
                     transition_rank.append(next_transition)
                     transition_mass.append(next_transition_mass)
+                    transition_smiles.append(next_transition_smiles)  # TODO did this today: transition_smiles
                 # Traverse
                 self.traverse(root=next_state, state_rank=state_rank, transition_rank=transition_rank,
-                              transition_mass=transition_mass)
+                              transition_mass=transition_mass, transition_smiles=transition_smiles) # TODO did this today: added transition_smiles
 
             # If it is inward and a starting transition, add to transitions and mass lists
             else:
                 # Choose the transition
                 next_transition = tr
                 next_transition_mass = mass
+                next_transition_smiles = _smiles  # TODO did this today
                 # If the transition has no input (starting transition), just add the transition and mass to lists
                 if not tr.input:
                     transition_rank.append(next_transition)
                     transition_mass.append(next_transition_mass)
+                    transition_smiles.append(next_transition_smiles)  # TODO did this today: transition_smiles
                 # # Get each input of the transition    TODO the only input cases that matter are the starting transitions. We do not need to go backwards along a transition
                 # for s in list(set(tr.input)):
                 #     # Update next state

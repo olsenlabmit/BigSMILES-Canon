@@ -1,0 +1,2 @@
+Initial: {[][<]OCCCCCC(=O)[>][]} 
+Canonical: {[][>]OCCCCCC(=O)[<][]} 
