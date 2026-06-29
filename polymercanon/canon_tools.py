@@ -2274,7 +2274,7 @@ def canonicalize_bigsmiles(bigsmiles, output_folder="Output", plot=False):
         transition_table["alphabet"] = transition_table["alphabet"].apply(integer_to_letter)
 
         # Create a folder for each tree
-        _output_folder = output_folder + f"\\Tree_{index}\\"
+        _output_folder = os.path.join(output_folder, f"Tree_{index}")
 
         # Save atomistic graph
         visualize_atomistic_graph(atomistic_graph, filename=f"Atomistic_Graph_{index}", output_folder=_output_folder,
@@ -2500,7 +2500,8 @@ if __name__ == "__main__":
         # ["3-armed star polymer", "OCCCCCC(=O){[>][<]OCCCCCC(=C)[>][<]}OCc1cc([#Arm1])cc([#Arm2])c1.{#Arm1=c2nnn(CC{[$][$]CC(c3ccccc3)[$][$]}CCC)c2}.{#Arm2=c4nnn({[>][<]CCO[>][<]}C)c4}"],
         # ["Vulcanized polymer", "{[][$]CC=CC[$],[$]CC([<])C([<])C[$],[>]{[$][$]SS[$][$]}[>][]}"],
         # ["Polymer network", "{[][>]C(=O)CCCCCCC(=O)[>],C([#R])([#R])OC([#R])([#R])[]}.{#R=COC(CO{[<][>]CCO[<][>]}CCN[<])(CO{[<][>]CCO[<][>]}CCN[<])}"],
-        ["macrocycle1", "C1CO{[>][<]CCO[>][<]}CCO1"],
+        ["PEG", "CCO{[>][<]CCO[>][<]}CCO"],
+        # ["macrocycle1", "C1CO{[>][<]CCO[>][<]}CCO1"],
         # ["macrocycle2", "O1CC{[>][<]OCC[>][<]}OCC1"],
         # ["test", "{[][>0]CC(c(cc1)ccc1)[<0],[>0]C(c(cc1)ccc1)C[<0];[H]{[<][>]CC(C)=CC[<][>]}[<0][]}"],
         # ["block4", "{[>][<]CCO[>][<]}CCO{[$][$]CC(c1ccccc1)[$][]}"],
@@ -2523,7 +2524,7 @@ if __name__ == "__main__":
     #
     ]
 
-    output_folder = "Validation\\Tests"
+    output_folder = os.path.join("Validation", "Tests")
     # If directory does not exist, create it
     try:
         os.makedirs(output_folder)

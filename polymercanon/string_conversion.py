@@ -7,6 +7,7 @@ Description: This file contains all functions related to the conversion from sta
 # External imports -----------------------------------------------------------------------------------------------------
 import networkx as nx
 import copy
+import os
 from polymersearch.graphs import RDKit_to_networkx_graph
 from rdkit import Chem
 from rdkit.Chem import Descriptors
@@ -1730,7 +1731,7 @@ def treat_automaton(tree, tree_name, output_folder, draw_alphabets):
     tree = treat_transitions(tree)
 
     # Unfold cycles
-    tree = unfold_cycles(tree, output_folder=output_folder + "\\Tree_Unfolding")
+    tree = unfold_cycles(tree, output_folder=os.path.join(output_folder, "Tree_Unfolding"))
     tree.plot(tree_name=f"Unfolded_{tree_name}", draw_alphabet_function=draw_alphabets, output_folder=output_folder)
 
     # Get the transtions that have to be merged

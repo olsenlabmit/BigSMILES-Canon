@@ -2407,7 +2407,7 @@ if __name__ == "__main__":
     ],
         end_states=[1, 2]
     )
-    folder = "Cycle_Detection_Tests\\Test13"
+    folder = os.path.join("Cycle_Detection_Tests", "Test13")
     tree.plot(tree_name="initial", output_folder=folder)
     tree.eliminate_epsilon_transitions()
     tree.plot(tree_name="no_empty_transitions", output_folder=folder)
