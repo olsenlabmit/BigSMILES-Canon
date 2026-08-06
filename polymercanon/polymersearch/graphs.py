@@ -370,7 +370,17 @@ def single_atom_cycle(descriptors, smiles):
                 cf_nodes.append(key)
         path = nx.shortest_path(G=networkx_graph, source=cf_nodes[0], target=cf_nodes[1])
         if len(path) == 3:
-            return "[Cf][Es]" + smiles[4:-4] + "[Cf]"
+            # This was `"[Cf][Es]" + smiles[4:-4] + "[Cf]"`, which assumed the
+            # second descriptor is the last four characters of the string. That
+            # only holds when it is written last ("[Cf]C[Cf]"); when it sits in
+            # a branch ("[Cf]C([Cf])CCC") the slice amputated four characters of
+            # real chemistry, and the truncated SMILES failed to parse — the
+            # caller then crashed on the resulting None. Inserting after the
+            # leading descriptor is equivalent for the trailing form and correct
+            # for the branched one.
+            if smiles.startswith("[Cf]"):
+                return "[Cf][Es]" + smiles[4:]
+            return smiles
         else:
             return smiles
     else:
