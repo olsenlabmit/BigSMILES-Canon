@@ -370,7 +370,9 @@ def single_atom_cycle(descriptors, smiles):
                 cf_nodes.append(key)
         path = nx.shortest_path(G=networkx_graph, source=cf_nodes[0], target=cf_nodes[1])
         if len(path) == 3:
-            return "[Cf][Es]" + smiles[4:-4] + "[Cf]"
+            if smiles.startswith("[Cf]"):
+                return "[Cf][Es]" + smiles[4:]
+            return smiles
         else:
             return smiles
     else:
