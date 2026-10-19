@@ -379,12 +379,15 @@ def choose_bonding_descriptors(bd_nodes, topology_graph, lower_level_group):
                     removed_nodes.append(node)
 
     # Remove conjugate descriptors from the same level
+    undirected_topology = topology_graph.to_undirected()
     for bd1 in removed_nodes:
         for bd2 in bd_nodes:
-            # If they are connected by end groups, it should not be removed. This is because they are not in the same
-            # stochastic object
+            # Use undirected paths: the question "are bd1 and bd2 in the same stochastic object?"
+            # is a connectivity question that does not depend on edge direction. Using the directed
+            # graph can miss the path bd1–parent–bd2 when both edges point outward from the parent,
+            # causing the default if_same_object=True to wrongly eliminate arm BDs of star polymers.
             if_same_object = True
-            for _path in list(generate_simple_paths(topology_graph, bd1, bd2, allowed_repeats=bd_nodes)) + list(generate_simple_paths(topology_graph, bd2, bd1, allowed_repeats=bd_nodes)):
+            for _path in list(generate_simple_paths(undirected_topology, bd1, bd2, allowed_repeats=bd_nodes)) + list(generate_simple_paths(undirected_topology, bd2, bd1, allowed_repeats=bd_nodes)):
                 for n in _path:
                     if n in lower_level_group:
                         if_same_object = False
