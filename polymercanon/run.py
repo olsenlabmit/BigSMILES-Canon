@@ -46,7 +46,7 @@ validation_set = [
     # ["3-armed star polymer", "OCCCCCC(=O){[>][<]OCCCCCC(=C)[>][<]}OCc1cc([#Arm1])cc([#Arm2])c1.{#Arm1=c2nnn(CC{[$][$]CC(c3ccccc3)[$][$]}CCC)c2}.{#Arm2=c4nnn({[>][<]CCO[>][<]}C)c4}"],
     # ["Vulcanized polymer", "{[][$]CC=CC[$],[$]CC([<])C([<])C[$],[>]{[$][$]SS[$][$]}[>][]}"],
     # ["Polymer network", "{[][>]C(=O)CCCCCCC(=O)[>],C([#R])([#R])OC([#R])([#R])[]}.{#R=COC(CO{[<][>]CCO[<][>]}CCN[<])(CO{[<][>]CCO[<][>]}CCN[<])}"],
-    ["PEG", "CCO{[>][<]CCO[>][<]}CCO"],
+    # ["PEG", "CCO{[>][<]CCO[>][<]}CCO"],
     # ["macrocycle1", "C1CO{[>][<]CCO[>][<]}CCO1"],
     # ["macrocycle2", "O1CC{[>][<]OCC[>][<]}OCC1"],
     # ["test", "{[][>0]CC(c(cc1)ccc1)[<0],[>0]C(c(cc1)ccc1)C[<0];[H]{[<][>]CC(C)=CC[<][>]}[<0][]}"],
@@ -66,7 +66,8 @@ validation_set = [
     # ["test_graft", "{[][>]CC(O{[>][<]OO[>][]})[<][]}"],
     # ["test_split", "CCO{[>][<]C[>2],[<2]CO[>][<]}CCO"],
     # ["initial", "N#CC(C)(C){[$][$]CC(c1ccccc1)[$];[$]C(C)(C)C#N,[$]C=C(c1ccccc1)[]}"],
-    # ["second_canonicalization2", "[H]CC(C#N)(C){[<][>]CC(c(cc1)ccc1)[<],[>]C(c(cc1)ccc1)C[<];[>]C(C#N)(C)C[H],[>]C=Cc(cc1)c(cc1)[H][]}"],
+    # ["second_canonicalization2", "[H]CC(C#N)(C){[<][>]CC(c(cc1)ccc1)[<],[>]C(c(cc1)ccc1)C[<];[>]C(C#N)(C)C[H],[>]C=Cc(cc1)c(cc1)[H][]}"],,
+    ["star_error", "{[][<]OCC[>][<]}OCC(CO{[>][<]CCO[>][<]})(CO{[>][<]CCO[>][<]})CO{[>][<]CCO[>][]}"]
 ]
 
 output_folder = os.path.join("Validation", "Tests")

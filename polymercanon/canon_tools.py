@@ -2277,7 +2277,7 @@ def canonicalize_bigsmiles(bigsmiles, output_folder="Output", plot=False):
         transition_table["alphabet"] = transition_table["alphabet"].apply(integer_to_letter)
 
         # Create a folder for each tree
-        _output_folder = os.path.join(output_folder, f"Tree_{index}")
+        _output_folder = output_folder + f"/Tree_{index}/"
 
         # Save atomistic graph
         visualize_atomistic_graph(atomistic_graph, filename=f"Atomistic_Graph_{index}", output_folder=_output_folder,
@@ -2503,7 +2503,7 @@ if __name__ == "__main__":
         # ["3-armed star polymer", "OCCCCCC(=O){[>][<]OCCCCCC(=C)[>][<]}OCc1cc([#Arm1])cc([#Arm2])c1.{#Arm1=c2nnn(CC{[$][$]CC(c3ccccc3)[$][$]}CCC)c2}.{#Arm2=c4nnn({[>][<]CCO[>][<]}C)c4}"],
         # ["Vulcanized polymer", "{[][$]CC=CC[$],[$]CC([<])C([<])C[$],[>]{[$][$]SS[$][$]}[>][]}"],
         # ["Polymer network", "{[][>]C(=O)CCCCCCC(=O)[>],C([#R])([#R])OC([#R])([#R])[]}.{#R=COC(CO{[<][>]CCO[<][>]}CCN[<])(CO{[<][>]CCO[<][>]}CCN[<])}"],
-        ["PEG", "CCO{[>][<]CCO[>][<]}CCO"],
+        # ["PEG", "CCO{[>][<]CCO[>][<]}CCO"],
         # ["macrocycle1", "C1CO{[>][<]CCO[>][<]}CCO1"],
         # ["macrocycle2", "O1CC{[>][<]OCC[>][<]}OCC1"],
         # ["test", "{[][>0]CC(c(cc1)ccc1)[<0],[>0]C(c(cc1)ccc1)C[<0];[H]{[<][>]CC(C)=CC[<][>]}[<0][]}"],
@@ -2524,10 +2524,19 @@ if __name__ == "__main__":
         # ["test_split", "CCO{[>][<]C[>2],[<2]CO[>][<]}CCO"],
         # ["initial", "N#CC(C)(C){[$][$]CC(c1ccccc1)[$];[$]C(C)(C)C#N,[$]C=C(c1ccccc1)[]}"],
         # ["second_canonicalization2", "[H]CC(C#N)(C){[<][>]CC(c(cc1)ccc1)[<],[>]C(c(cc1)ccc1)C[<];[>]C(C#N)(C)C[H],[>]C=Cc(cc1)c(cc1)[H][]}"],
+        
+        # ["star_error", "{[][>]OO[<][>]}C({[>][<]CC[>][<]}){[>][<]CC[>][<]}"],
+        # ["star_error2", "{[][>]OCC[<][>]}OCC(CO{[>][<]CCO[>][<]})(CO{[>][<]CCO[>][<]})CO{[>][<]CCO[>][]}"],
+        # ["star_error3", "{[][<]OCC[>][<]}OCC(CO{[>][<]CCO[>][<]})(CO{[>][<]CCO[>][<]})CO{[>][<]CCO[>][]}"],
+        # ["Imidiazolium end group", "C{[>][<][Si](C)(C)O[>][<]}[Y]N1C=C[N+]=C1"],
+        # ["Aromatic NH", "C{[>][<]C1=CC=C(N1)[>][<]}C"],
+
+        ["comparison1", "{[][>]SS[<][>]}C({[>][<]CC[>][<]}){[>][<]CC[>][<]}"],
+        ["comparison2", "{[][<]SS[>][<]}C({[>][<]CC[>][<]}){[>][<]CC[>][<]}"],
     #
     ]
 
-    output_folder = os.path.join("Validation", "Tests")
+    output_folder = "polymercanon/Validation/Tests/errors"
     # If directory does not exist, create it
     try:
         os.makedirs(output_folder)
