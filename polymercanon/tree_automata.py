@@ -1290,6 +1290,9 @@ class TreeAutomata:
 
         """
 
+        if output_folder is None:
+            return
+
         # Create graph
         graph = pydot.Dot(graph_type='graph', rankdir="LR")
 

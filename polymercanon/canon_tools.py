@@ -2276,42 +2276,52 @@ def canonicalize_bigsmiles(bigsmiles, output_folder="Output", plot=False):
         # Convert alphabets into letters
         transition_table["alphabet"] = transition_table["alphabet"].apply(integer_to_letter)
 
-        # Create a folder for each tree
-        _output_folder = output_folder + f"/Tree_{index}/"
-
-        # Save atomistic graph
-        visualize_atomistic_graph(atomistic_graph, filename=f"Atomistic_Graph_{index}", output_folder=_output_folder,
-                                  show_state_index=True)
-
         # Create Tree Automata object
         tree = transition_table_to_automaton(transition_table=transition_table, end_states=end_states)
-        # Minimize state machine
-        tree.generate_minimial_tree(plot=plot, tree_name=index, draw_alphabet_function=draw_alphabets,
-                                    output_folder=_output_folder)
-        # Convert tree automaton into BigSMILES
-        _bigsmiles = string_conversion.to_bigsmiles(dfta=tree, tree_name=index, output_folder=_output_folder,
-                                                    draw_alphabets=draw_alphabets)
+
+        if output_folder is not None:
+            # Create a folder for each tree
+            _output_folder = output_folder + f"/Tree_{index}/"
+
+            # Save atomistic graph
+            visualize_atomistic_graph(atomistic_graph, filename=f"Atomistic_Graph_{index}", output_folder=_output_folder,
+                                      show_state_index=True)
+
+            # Minimize state machine
+            tree.generate_minimial_tree(plot=plot, tree_name=index, draw_alphabet_function=draw_alphabets,
+                                        output_folder=_output_folder)
+            # Convert tree automaton into BigSMILES
+            _bigsmiles = string_conversion.to_bigsmiles(dfta=tree, tree_name=index, output_folder=_output_folder,
+                                                        draw_alphabets=draw_alphabets)
+
+            # Save BigSMILES to text file
+            with open(os.path.join(_output_folder, "Canonical_BigSMILES.txt"), "w") as f:
+                # Write initial BigSMILES
+                f.write(f"Initial: {bigsmiles} \n")
+                # Write canonical BigSMILES
+                f.write(f"Canonical: {_bigsmiles} \n")
+        else:
+            # Minimize state machine (no output)
+            tree.generate_minimial_tree(plot=plot, tree_name=index, draw_alphabet_function=draw_alphabets,
+                                        output_folder=None)
+            # Convert tree automaton into BigSMILES
+            _bigsmiles = string_conversion.to_bigsmiles(dfta=tree, tree_name=index, output_folder=None,
+                                                        draw_alphabets=draw_alphabets)
 
         # Add to list of BigSMILES
         bigsmiles_list.append(_bigsmiles)
-
-        # Save BigSMILES to text file
-        with open(os.path.join(_output_folder, "Canonical_BigSMILES.txt"), "w") as f:
-            # Write initial BigSMILES
-            f.write(f"Initial: {bigsmiles} \n")
-            # Write canonical BigSMILES
-            f.write(f"Canonical: {_bigsmiles} \n")
         # Update index
         index += 1
 
     # Choose one string from the set of BigSMILES strings
     canonical_bigsmiles = choose_one_bigsmiles(bigsmiles_list)
 
-    # Save a text file with the initial BigSMILES, canonical BigSMILEs and other options
-    save_bigsmiles_file(original_bigsmiles=bigsmiles,
-                        canonical_bigsmiles=canonical_bigsmiles,
-                        bigsmiles_list=bigsmiles_list,
-                        output_folder=output_folder)
+    if output_folder is not None:
+        # Save a text file with the initial BigSMILES, canonical BigSMILEs and other options
+        save_bigsmiles_file(original_bigsmiles=bigsmiles,
+                            canonical_bigsmiles=canonical_bigsmiles,
+                            bigsmiles_list=bigsmiles_list,
+                            output_folder=output_folder)
 
     return canonical_bigsmiles
 
