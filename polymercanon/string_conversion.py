@@ -1731,7 +1731,7 @@ def treat_automaton(tree, tree_name, output_folder, draw_alphabets):
     tree = treat_transitions(tree)
 
     # Unfold cycles
-    tree = unfold_cycles(tree, output_folder=os.path.join(output_folder, "Tree_Unfolding"))
+    tree = unfold_cycles(tree, output_folder=os.path.join(output_folder, "Tree_Unfolding") if output_folder is not None else None)
     tree.plot(tree_name=f"Unfolded_{tree_name}", draw_alphabet_function=draw_alphabets, output_folder=output_folder)
 
     # Get the transtions that have to be merged

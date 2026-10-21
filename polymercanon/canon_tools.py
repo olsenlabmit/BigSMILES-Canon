@@ -379,12 +379,15 @@ def choose_bonding_descriptors(bd_nodes, topology_graph, lower_level_group):
                     removed_nodes.append(node)
 
     # Remove conjugate descriptors from the same level
+    undirected_topology = topology_graph.to_undirected()
     for bd1 in removed_nodes:
         for bd2 in bd_nodes:
-            # If they are connected by end groups, it should not be removed. This is because they are not in the same
-            # stochastic object
+            # Use undirected paths: the question "are bd1 and bd2 in the same stochastic object?"
+            # is a connectivity question that does not depend on edge direction. Using the directed
+            # graph can miss the path bd1–parent–bd2 when both edges point outward from the parent,
+            # causing the default if_same_object=True to wrongly eliminate arm BDs of star polymers.
             if_same_object = True
-            for _path in list(generate_simple_paths(topology_graph, bd1, bd2, allowed_repeats=bd_nodes)) + list(generate_simple_paths(topology_graph, bd2, bd1, allowed_repeats=bd_nodes)):
+            for _path in list(generate_simple_paths(undirected_topology, bd1, bd2, allowed_repeats=bd_nodes)) + list(generate_simple_paths(undirected_topology, bd2, bd1, allowed_repeats=bd_nodes)):
                 for n in _path:
                     if n in lower_level_group:
                         if_same_object = False
@@ -2273,42 +2276,52 @@ def canonicalize_bigsmiles(bigsmiles, output_folder="Output", plot=False):
         # Convert alphabets into letters
         transition_table["alphabet"] = transition_table["alphabet"].apply(integer_to_letter)
 
-        # Create a folder for each tree
-        _output_folder = os.path.join(output_folder, f"Tree_{index}")
-
-        # Save atomistic graph
-        visualize_atomistic_graph(atomistic_graph, filename=f"Atomistic_Graph_{index}", output_folder=_output_folder,
-                                  show_state_index=True)
-
         # Create Tree Automata object
         tree = transition_table_to_automaton(transition_table=transition_table, end_states=end_states)
-        # Minimize state machine
-        tree.generate_minimial_tree(plot=plot, tree_name=index, draw_alphabet_function=draw_alphabets,
-                                    output_folder=_output_folder)
-        # Convert tree automaton into BigSMILES
-        _bigsmiles = string_conversion.to_bigsmiles(dfta=tree, tree_name=index, output_folder=_output_folder,
-                                                    draw_alphabets=draw_alphabets)
+
+        if output_folder is not None:
+            # Create a folder for each tree
+            _output_folder = output_folder + f"/Tree_{index}/"
+
+            # Save atomistic graph
+            visualize_atomistic_graph(atomistic_graph, filename=f"Atomistic_Graph_{index}", output_folder=_output_folder,
+                                      show_state_index=True)
+
+            # Minimize state machine
+            tree.generate_minimial_tree(plot=plot, tree_name=index, draw_alphabet_function=draw_alphabets,
+                                        output_folder=_output_folder)
+            # Convert tree automaton into BigSMILES
+            _bigsmiles = string_conversion.to_bigsmiles(dfta=tree, tree_name=index, output_folder=_output_folder,
+                                                        draw_alphabets=draw_alphabets)
+
+            # Save BigSMILES to text file
+            with open(os.path.join(_output_folder, "Canonical_BigSMILES.txt"), "w") as f:
+                # Write initial BigSMILES
+                f.write(f"Initial: {bigsmiles} \n")
+                # Write canonical BigSMILES
+                f.write(f"Canonical: {_bigsmiles} \n")
+        else:
+            # Minimize state machine (no output)
+            tree.generate_minimial_tree(plot=plot, tree_name=index, draw_alphabet_function=draw_alphabets,
+                                        output_folder=None)
+            # Convert tree automaton into BigSMILES
+            _bigsmiles = string_conversion.to_bigsmiles(dfta=tree, tree_name=index, output_folder=None,
+                                                        draw_alphabets=draw_alphabets)
 
         # Add to list of BigSMILES
         bigsmiles_list.append(_bigsmiles)
-
-        # Save BigSMILES to text file
-        with open(os.path.join(_output_folder, "Canonical_BigSMILES.txt"), "w") as f:
-            # Write initial BigSMILES
-            f.write(f"Initial: {bigsmiles} \n")
-            # Write canonical BigSMILES
-            f.write(f"Canonical: {_bigsmiles} \n")
         # Update index
         index += 1
 
     # Choose one string from the set of BigSMILES strings
     canonical_bigsmiles = choose_one_bigsmiles(bigsmiles_list)
 
-    # Save a text file with the initial BigSMILES, canonical BigSMILEs and other options
-    save_bigsmiles_file(original_bigsmiles=bigsmiles,
-                        canonical_bigsmiles=canonical_bigsmiles,
-                        bigsmiles_list=bigsmiles_list,
-                        output_folder=output_folder)
+    if output_folder is not None:
+        # Save a text file with the initial BigSMILES, canonical BigSMILEs and other options
+        save_bigsmiles_file(original_bigsmiles=bigsmiles,
+                            canonical_bigsmiles=canonical_bigsmiles,
+                            bigsmiles_list=bigsmiles_list,
+                            output_folder=output_folder)
 
     return canonical_bigsmiles
 
@@ -2500,7 +2513,7 @@ if __name__ == "__main__":
         # ["3-armed star polymer", "OCCCCCC(=O){[>][<]OCCCCCC(=C)[>][<]}OCc1cc([#Arm1])cc([#Arm2])c1.{#Arm1=c2nnn(CC{[$][$]CC(c3ccccc3)[$][$]}CCC)c2}.{#Arm2=c4nnn({[>][<]CCO[>][<]}C)c4}"],
         # ["Vulcanized polymer", "{[][$]CC=CC[$],[$]CC([<])C([<])C[$],[>]{[$][$]SS[$][$]}[>][]}"],
         # ["Polymer network", "{[][>]C(=O)CCCCCCC(=O)[>],C([#R])([#R])OC([#R])([#R])[]}.{#R=COC(CO{[<][>]CCO[<][>]}CCN[<])(CO{[<][>]CCO[<][>]}CCN[<])}"],
-        ["PEG", "CCO{[>][<]CCO[>][<]}CCO"],
+        # ["PEG", "CCO{[>][<]CCO[>][<]}CCO"],
         # ["macrocycle1", "C1CO{[>][<]CCO[>][<]}CCO1"],
         # ["macrocycle2", "O1CC{[>][<]OCC[>][<]}OCC1"],
         # ["test", "{[][>0]CC(c(cc1)ccc1)[<0],[>0]C(c(cc1)ccc1)C[<0];[H]{[<][>]CC(C)=CC[<][>]}[<0][]}"],
@@ -2521,10 +2534,19 @@ if __name__ == "__main__":
         # ["test_split", "CCO{[>][<]C[>2],[<2]CO[>][<]}CCO"],
         # ["initial", "N#CC(C)(C){[$][$]CC(c1ccccc1)[$];[$]C(C)(C)C#N,[$]C=C(c1ccccc1)[]}"],
         # ["second_canonicalization2", "[H]CC(C#N)(C){[<][>]CC(c(cc1)ccc1)[<],[>]C(c(cc1)ccc1)C[<];[>]C(C#N)(C)C[H],[>]C=Cc(cc1)c(cc1)[H][]}"],
+        
+        # ["star_error", "{[][>]OO[<][>]}C({[>][<]CC[>][<]}){[>][<]CC[>][<]}"],
+        # ["star_error2", "{[][>]OCC[<][>]}OCC(CO{[>][<]CCO[>][<]})(CO{[>][<]CCO[>][<]})CO{[>][<]CCO[>][]}"],
+        # ["star_error3", "{[][<]OCC[>][<]}OCC(CO{[>][<]CCO[>][<]})(CO{[>][<]CCO[>][<]})CO{[>][<]CCO[>][]}"],
+        # ["Imidiazolium end group", "C{[>][<][Si](C)(C)O[>][<]}[Y]N1C=C[N+]=C1"],
+        # ["Aromatic NH", "C{[>][<]C1=CC=C(N1)[>][<]}C"],
+
+        ["comparison1", "{[][>]SS[<][>]}C({[>][<]CC[>][<]}){[>][<]CC[>][<]}"],
+        ["comparison2", "{[][<]SS[>][<]}C({[>][<]CC[>][<]}){[>][<]CC[>][<]}"],
     #
     ]
 
-    output_folder = os.path.join("Validation", "Tests")
+    output_folder = "polymercanon/Validation/Tests/errors"
     # If directory does not exist, create it
     try:
         os.makedirs(output_folder)
