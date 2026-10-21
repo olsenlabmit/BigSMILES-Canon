@@ -971,11 +971,6 @@ def alphabet_to_SMILES(group, state_machine, symbols, formal_charge, is_aromatic
                 atom = Chem.Atom(symbols[node])
                 atom.SetFormalCharge(formal_charge[node])
                 atom.SetIsAromatic(is_aromatic[node])
-                if is_aromatic[node]:
-                    num_hs = state_machine.nodes[node].get("num_hs", 0)
-                    if num_hs > 0:
-                        atom.SetNumExplicitHs(num_hs)
-                        atom.SetNoImplicit(True)
                 idx = mol.AddAtom(atom)
                 node_to_idx[node] = idx
             for r in right:

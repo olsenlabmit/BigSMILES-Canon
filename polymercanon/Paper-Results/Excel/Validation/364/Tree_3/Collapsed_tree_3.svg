@@ -29,7 +29,7 @@
 <text xml:space="preserve" text-anchor="middle" x="198.75" y="-53.95" font-family="Times,serif" font-size="14.00">8</text>
 </g>
 <!-- 0&#45;&#45;8 -->
-<g id="edge5" class="edge">
+<g id="edge6" class="edge">
 <title>0&#45;&#45;8</title>
 <path fill="none" stroke="black" d="M134.36,-29.31C145,-34.29 159.35,-41.01 171.7,-46.8"/>
 <polygon fill="black" stroke="black" points="169.99,-49.86 180.53,-50.94 172.96,-43.53 169.99,-49.86"/>
@@ -65,7 +65,7 @@
 </g>
 <!-- 9 -->
 <!-- 9&#45;&#45;0 -->
-<g id="edge6" class="edge">
+<g id="edge5" class="edge">
 <title>9&#45;&#45;0</title>
 <path fill="none" stroke="darkgreen" stroke-width="4" d="M54.15,-22C63.4,-22 73.94,-22 83.69,-22"/>
 <polygon fill="darkgreen" stroke="darkgreen" stroke-width="4" points="83.42,-25.5 93.42,-22 83.42,-18.5 83.42,-25.5"/>

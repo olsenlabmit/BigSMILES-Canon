@@ -61,14 +61,14 @@
 <text xml:space="preserve" text-anchor="middle" x="377.44" y="-144.33" font-family="Times,serif" font-size="14.00">HG</text>
 </g>
 <!-- 14 -->
-<g id="node8" class="node">
+<g id="node9" class="node">
 <title>14</title>
 <ellipse fill="red" stroke="red" cx="467.46" cy="-85" rx="20.13" ry="20.13"/>
 <ellipse fill="none" stroke="red" cx="467.46" cy="-85" rx="24.13" ry="24.13"/>
 <text xml:space="preserve" text-anchor="middle" x="467.46" y="-79.95" font-family="Times,serif" font-size="14.00">14</text>
 </g>
 <!-- 12&#45;&#45;14 -->
-<g id="edge15" class="edge">
+<g id="edge16" class="edge">
 <title>12&#45;&#45;14</title>
 <path fill="none" stroke="black" d="M397.98,-85C407.82,-85 420.07,-85 431.47,-85"/>
 <polygon fill="black" stroke="black" points="431.4,-88.5 441.4,-85 431.4,-81.5 431.4,-88.5"/>
@@ -150,7 +150,7 @@
 </g>
 <!-- 23 -->
 <!-- 23&#45;&#45;0 -->
-<g id="edge16" class="edge">
+<g id="edge15" class="edge">
 <title>23&#45;&#45;0</title>
 <path fill="none" stroke="darkgreen" stroke-width="4" d="M54.32,-18C65.36,-18 78.32,-18 90.02,-18"/>
 <polygon fill="darkgreen" stroke="darkgreen" stroke-width="4" points="89.83,-21.5 99.83,-18 89.83,-14.5 89.83,-21.5"/>

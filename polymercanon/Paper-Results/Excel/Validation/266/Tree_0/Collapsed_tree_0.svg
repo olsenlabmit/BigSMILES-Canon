@@ -31,7 +31,7 @@
 <text xml:space="preserve" text-anchor="middle" x="297.12" y="-67.43" font-family="Times,serif" font-size="14.00">FCDEDCB</text>
 </g>
 <!-- 8&#45;&#45;1 -->
-<g id="edge4" class="edge">
+<g id="edge3" class="edge">
 <title>8&#45;&#45;1</title>
 <path fill="none" stroke="black" d="M346.32,-35.2C325.58,-32.19 293.08,-29.54 266,-36.5 258.85,-38.34 251.62,-41.49 245.01,-44.99"/>
 <polygon fill="black" stroke="black" points="243.46,-41.85 236.56,-49.89 246.97,-47.9 243.46,-41.85"/>
@@ -45,7 +45,7 @@
 <text xml:space="preserve" text-anchor="middle" x="118" y="-16.95" font-family="Times,serif" font-size="14.00">0</text>
 </g>
 <!-- 0&#45;&#45;1 -->
-<g id="edge5" class="edge">
+<g id="edge4" class="edge">
 <title>0&#45;&#45;1</title>
 <path fill="none" stroke="black" d="M138.6,-30.3C152.13,-36.02 170.37,-43.74 185.73,-50.24"/>
 <polygon fill="black" stroke="black" points="184.33,-53.45 194.91,-54.13 187.06,-47 184.33,-53.45"/>
@@ -60,7 +60,7 @@
 </g>
 <!-- 9 -->
 <!-- 9&#45;&#45;0 -->
-<g id="edge3" class="edge">
+<g id="edge5" class="edge">
 <title>9&#45;&#45;0</title>
 <path fill="none" stroke="darkgreen" stroke-width="4" d="M54.22,-22C62.28,-22 71.31,-22 79.96,-22"/>
 <polygon fill="darkgreen" stroke="darkgreen" stroke-width="4" points="79.69,-25.5 89.69,-22 79.69,-18.5 79.69,-25.5"/>
