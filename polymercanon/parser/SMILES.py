@@ -563,6 +563,8 @@ class SMILES:
                    ATOM!='O' and ATOM!='S' and ATOM!='P' and ATOM!='P' and ATOM!='F' and ATOM!='I' and \
                    ATOM!='c' and ATOM!='b' and ATOM!='n' and ATOM!='o' and ATOM!='s' and ATOM!='p':
                     smilesStr = smilesStr + thisBond + '[' + self.G.nodes[thisAtom]['atom'] + ']'
+                elif hcount > 0 and self.G.nodes[thisAtom]['_type'] == 'bracket_atom':
+                    smilesStr = smilesStr + thisBond + '[' + ATOM + hcountSymbol + ']'
                 else:
                     smilesStr = smilesStr + thisBond + self.G.nodes[thisAtom]['atom']
             else:

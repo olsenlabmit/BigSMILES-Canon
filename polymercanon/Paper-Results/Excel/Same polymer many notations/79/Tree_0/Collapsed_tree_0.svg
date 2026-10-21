@@ -36,7 +36,7 @@
 <text xml:space="preserve" text-anchor="middle" x="195" y="-16.95" font-family="Times,serif" font-size="14.00">2</text>
 </g>
 <!-- 0&#45;&#45;2 -->
-<g id="edge5" class="edge">
+<g id="edge6" class="edge">
 <title>0&#45;&#45;2</title>
 <path fill="none" stroke="black" d="M132.14,-22C141.81,-22 154.13,-22 165.24,-22"/>
 <polygon fill="black" stroke="black" points="165.11,-25.5 175.11,-22 165.11,-18.5 165.11,-25.5"/>
@@ -65,7 +65,7 @@
 </g>
 <!-- 6 -->
 <!-- 6&#45;&#45;0 -->
-<g id="edge6" class="edge">
+<g id="edge5" class="edge">
 <title>6&#45;&#45;0</title>
 <path fill="none" stroke="darkgreen" stroke-width="4" d="M54.43,-22C62.41,-22 71.29,-22 79.66,-22"/>
 <polygon fill="darkgreen" stroke="darkgreen" stroke-width="4" points="79.66,-25.5 89.66,-22 79.66,-18.5 79.66,-25.5"/>

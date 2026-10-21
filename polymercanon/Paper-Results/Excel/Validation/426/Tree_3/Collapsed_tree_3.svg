@@ -36,7 +36,7 @@
 <text xml:space="preserve" text-anchor="middle" x="284.25" y="-74.95" font-family="Times,serif" font-size="14.00">4</text>
 </g>
 <!-- 0&#45;&#45;4 -->
-<g id="edge22" class="edge">
+<g id="edge23" class="edge">
 <title>0&#45;&#45;4</title>
 <path fill="none" stroke="black" d="M125.74,-71.23C138.63,-84.95 160.93,-105.56 185.25,-114 210.89,-122.9 240.31,-109.53 260.17,-97.03"/>
 <polygon fill="black" stroke="black" points="262,-100.02 268.36,-91.54 258.1,-94.21 262,-100.02"/>
@@ -123,14 +123,14 @@
 <text xml:space="preserve" text-anchor="middle" x="557.66" y="-80.7" font-family="Times,serif" font-size="14.00">EG</text>
 </g>
 <!-- 20 -->
-<g id="node8" class="node">
+<g id="node9" class="node">
 <title>20</title>
 <ellipse fill="red" stroke="red" cx="689.56" cy="-63" rx="20.13" ry="20.13"/>
 <ellipse fill="none" stroke="red" cx="689.56" cy="-63" rx="24.13" ry="24.13"/>
 <text xml:space="preserve" text-anchor="middle" x="689.56" y="-57.95" font-family="Times,serif" font-size="14.00">20</text>
 </g>
 <!-- 13&#45;&#45;20 -->
-<g id="edge21" class="edge">
+<g id="edge22" class="edge">
 <title>13&#45;&#45;20</title>
 <path fill="none" stroke="black" d="M529.48,-72.5C544.06,-66.83 565.3,-59.54 584.66,-56.5 607.65,-52.9 633.79,-54.56 654.1,-57.11"/>
 <polygon fill="black" stroke="black" points="653.43,-60.55 663.81,-58.46 654.4,-53.61 653.43,-60.55"/>
@@ -165,7 +165,7 @@
 <path fill="none" stroke="black" d="M298.61,-91.44C313.02,-95.41 334.94,-93.64 342.65,-86.12"/>
 </g>
 <!-- 2&#45;&#45;4 -->
-<g id="edge24" class="edge">
+<g id="edge20" class="edge">
 <title>2&#45;&#45;4</title>
 <path fill="none" stroke="black" d="M218.01,-28.8C229.72,-37.99 246.77,-51.37 260.51,-62.15"/>
 <polygon fill="black" stroke="black" points="258.16,-64.76 268.19,-68.18 262.49,-59.25 258.16,-64.76"/>
@@ -206,7 +206,7 @@
 <text xml:space="preserve" text-anchor="middle" x="604.79" y="-161.33" font-family="Times,serif" font-size="14.00">EG</text>
 </g>
 <!-- 22&#45;&#45;20 -->
-<g id="edge20" class="edge">
+<g id="edge24" class="edge">
 <title>22&#45;&#45;20</title>
 <path fill="none" stroke="black" d="M623.35,-93.73C633.15,-89.11 645.67,-83.21 657.11,-77.82"/>
 <polygon fill="black" stroke="black" points="658.29,-81.13 665.84,-73.7 655.3,-74.8 658.29,-81.13"/>
@@ -214,7 +214,7 @@
 </g>
 <!-- 24 -->
 <!-- 24&#45;&#45;0 -->
-<g id="edge23" class="edge">
+<g id="edge21" class="edge">
 <title>24&#45;&#45;0</title>
 <path fill="none" stroke="darkgreen" stroke-width="4" d="M54.2,-58C62.05,-58 70.78,-58 79.03,-58"/>
 <polygon fill="darkgreen" stroke="darkgreen" stroke-width="4" points="78.8,-61.5 88.8,-58 78.8,-54.5 78.8,-61.5"/>

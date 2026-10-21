@@ -30,7 +30,7 @@
 <text xml:space="preserve" text-anchor="middle" x="162.88" y="-25.2" font-family="Times,serif" font-size="14.00">B</text>
 </g>
 <!-- 1&#45;&#45;0 -->
-<g id="edge3" class="edge">
+<g id="edge2" class="edge">
 <title>1&#45;&#45;0</title>
 <path fill="none" stroke="black" d="M188.88,-11.58C182.74,-7.6 175.23,-3.53 167.75,-1.5 160.37,0.5 152.63,-0.97 145.54,-3.87"/>
 <polygon fill="black" stroke="black" points="144.4,-0.52 137.1,-8.2 147.59,-6.75 144.4,-0.52"/>
@@ -38,7 +38,7 @@
 </g>
 <!-- 2 -->
 <!-- 2&#45;&#45;0 -->
-<g id="edge2" class="edge">
+<g id="edge3" class="edge">
 <title>2&#45;&#45;0</title>
 <path fill="none" stroke="darkgreen" stroke-width="4" d="M54.22,-22C62.28,-22 71.31,-22 79.96,-22"/>
 <polygon fill="darkgreen" stroke="darkgreen" stroke-width="4" points="79.69,-25.5 89.69,-22 79.69,-18.5 79.69,-25.5"/>
