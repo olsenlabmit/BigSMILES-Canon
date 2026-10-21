@@ -610,6 +610,20 @@ class TreeAutomata:
         det_state_list = []
         new_states = []
 
+        # Bootstrap: self-loop transitions (input=[q], output=[q]) represent bonding
+        # descriptors that are ground terms but have no explicit 0-ary transition.
+        # Add their states to det_state_list/det_states so collapse_states can process them.
+        for tr in transitions:
+            if len(tr[0]) == 1:  # unary transition
+                inp = tr[0][0]   # [q] form
+                out = tr[2]      # [q] form for self-loop
+                if isinstance(inp, list) and inp == out:
+                    for q in inp:
+                        if q not in det_state_list:
+                            det_state_list.append(q)
+                    if inp not in det_states:
+                        det_states.append(list(inp))
+
         loop = True
         while loop:
             loop, det_transitions, det_states, det_state_list, new_states = self.collapse_states(transitions,
@@ -1102,6 +1116,12 @@ class TreeAutomata:
 
         # Set accessible states list to empty
         access_states = []
+        # Pre-seed: states with self-loop transitions are ground terms (bonding descriptors)
+        # and are accessible even though no 0-ary transition produces them.
+        for tr in transitions:
+            if len(tr.input) == 1 and tr.input[0] == tr.output and tr.input[0] not in access_states:
+                access_states.append(tr.input[0])
+        n_access_states_after = len(access_states)
         # Find accessible states
         while (n_access_states_before - n_access_states_after) != 0:
 
@@ -1593,6 +1613,17 @@ class TreeAutomata:
 
         # Update the list of transitions with the list of transitions that has been generated
         self.transitions = transition_rank
+
+        # Ensure every state reachable via self.states, self.end_states, and transitions has
+        # an entry in state_rank. States unreachable from start transitions (e.g. bonding-
+        # descriptor self-loop states) would otherwise cause a KeyError below.
+        all_states = set(self.states) | set(self.end_states)
+        for tr in self.transitions:
+            all_states.update(tr.input)
+            all_states.add(tr.output)
+        for s in sorted(all_states):
+            if s not in state_rank:
+                state_rank.append(s)
 
         # Replace state labels by the indices from the state_rank list
         old_new_state_map = {s: i for i, s in enumerate(state_rank)}  # Dict that maps old states onto new states
