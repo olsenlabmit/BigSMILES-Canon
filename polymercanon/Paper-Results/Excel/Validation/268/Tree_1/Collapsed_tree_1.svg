@@ -38,14 +38,14 @@
 <text xml:space="preserve" text-anchor="middle" x="368" y="-33.95" font-family="Times,serif" font-size="14.00">6</text>
 </g>
 <!-- 0&#45;&#45;6 -->
-<g id="edge4" class="edge">
+<g id="edge3" class="edge">
 <title>0&#45;&#45;6</title>
 <path fill="none" stroke="black" d="M139.86,-19.01C168.26,-15.42 220.63,-10.45 265,-15.5 289,-18.23 315.57,-24.46 335.58,-29.82"/>
 <polygon fill="black" stroke="black" points="334.5,-33.15 345.07,-32.44 336.36,-26.4 334.5,-33.15"/>
 <text xml:space="preserve" text-anchor="middle" x="243" y="-18.7" font-family="Times,serif" font-size="14.00">A</text>
 </g>
 <!-- 5&#45;&#45;6 -->
-<g id="edge5" class="edge">
+<g id="edge4" class="edge">
 <title>5&#45;&#45;6</title>
 <path fill="none" stroke="black" d="M265.4,-63.58C282.58,-63.54 307.19,-62.36 328,-57 331.18,-56.18 334.42,-55.11 337.61,-53.9"/>
 <polygon fill="black" stroke="black" points="338.87,-57.17 346.68,-50 336.11,-50.74 338.87,-57.17"/>
@@ -60,7 +60,7 @@
 </g>
 <!-- 7 -->
 <!-- 7&#45;&#45;0 -->
-<g id="edge3" class="edge">
+<g id="edge5" class="edge">
 <title>7&#45;&#45;0</title>
 <path fill="none" stroke="darkgreen" stroke-width="4" d="M54.22,-22C62.28,-22 71.31,-22 79.96,-22"/>
 <polygon fill="darkgreen" stroke="darkgreen" stroke-width="4" points="79.69,-25.5 89.69,-22 79.69,-18.5 79.69,-25.5"/>

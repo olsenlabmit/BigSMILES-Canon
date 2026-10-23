@@ -30,32 +30,32 @@
 <text xml:space="preserve" text-anchor="middle" x="162.5" y="-45.92" font-family="Times,serif" font-size="14.00">B</text>
 </g>
 <!-- 2 -->
-<g id="node3" class="node">
+<g id="node4" class="node">
 <title>2</title>
 <ellipse fill="none" stroke="black" cx="284.75" cy="-22" rx="18" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="284.75" y="-16.95" font-family="Times,serif" font-size="14.00">2</text>
 </g>
 <!-- 1&#45;&#45;2 -->
-<g id="edge3" class="edge">
+<g id="edge4" class="edge">
 <title>1&#45;&#45;2</title>
 <path fill="none" stroke="black" d="M219.76,-51.69C230.57,-46.67 245.17,-39.9 257.7,-34.09"/>
 <polygon fill="black" stroke="black" points="259.06,-37.32 266.65,-29.93 256.11,-30.97 259.06,-37.32"/>
 <text xml:space="preserve" text-anchor="middle" x="243.88" y="-45.92" font-family="Times,serif" font-size="14.00">A</text>
 </g>
-<!-- 2&#45;&#45;0 -->
-<g id="edge2" class="edge">
-<title>2&#45;&#45;0</title>
-<path fill="none" stroke="black" d="M266.47,-19.73C253.89,-18.19 236.42,-16.3 221,-15.5 205.02,-14.67 200.98,-14.71 185,-15.5 174.05,-16.04 162.12,-17.07 151.46,-18.16"/>
-<polygon fill="black" stroke="black" points="151.14,-14.68 141.57,-19.23 151.89,-21.64 151.14,-14.68"/>
-<text xml:space="preserve" text-anchor="middle" x="203" y="-18.7" font-family="Times,serif" font-size="14.00">A</text>
-</g>
 <!-- 3 -->
 <!-- 3&#45;&#45;0 -->
-<g id="edge4" class="edge">
+<g id="edge2" class="edge">
 <title>3&#45;&#45;0</title>
 <path fill="none" stroke="darkgreen" stroke-width="4" d="M54.22,-22C62.28,-22 71.31,-22 79.96,-22"/>
 <polygon fill="darkgreen" stroke="darkgreen" stroke-width="4" points="79.69,-25.5 89.69,-22 79.69,-18.5 79.69,-25.5"/>
 <text xml:space="preserve" text-anchor="start" x="72" y="-25.75" font-family="Times,serif" font-size="14.00">ε</text>
+</g>
+<!-- 2&#45;&#45;0 -->
+<g id="edge3" class="edge">
+<title>2&#45;&#45;0</title>
+<path fill="none" stroke="black" d="M266.47,-19.73C253.89,-18.19 236.42,-16.3 221,-15.5 205.02,-14.67 200.98,-14.71 185,-15.5 174.05,-16.04 162.12,-17.07 151.46,-18.16"/>
+<polygon fill="black" stroke="black" points="151.14,-14.68 141.57,-19.23 151.89,-21.64 151.14,-14.68"/>
+<text xml:space="preserve" text-anchor="middle" x="203" y="-18.7" font-family="Times,serif" font-size="14.00">A</text>
 </g>
 </g>
 </svg>

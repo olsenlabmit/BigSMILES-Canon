@@ -606,7 +606,7 @@ class SMILES:
                                                        self.G.nodes[atom]['isotope'] == '' and \
                                                        self.G.nodes[atom]['charge'] == '' and \
                                                        self.G.nodes[atom]['_class'] == '' )
-            ringswap,ringcount = self.swapBranch(start,thisAtom,nextAtoms,
+            ringswap,ringcount = self.swapBranch(start+hcount,thisAtom,nextAtoms,
                                                  lambda atom:tuple(sorted((thisAtom,atom))) in self.ringDict.keys())
             swapCount = hswap + ringswap
             hcount + ringcount

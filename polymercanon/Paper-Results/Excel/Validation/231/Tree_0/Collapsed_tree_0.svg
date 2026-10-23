@@ -45,14 +45,14 @@
 <text xml:space="preserve" text-anchor="middle" x="365" y="-36.95" font-family="Times,serif" font-size="14.00">6</text>
 </g>
 <!-- 0&#45;&#45;6 -->
-<g id="edge6" class="edge">
+<g id="edge7" class="edge">
 <title>0&#45;&#45;6</title>
 <path fill="none" stroke="black" d="M138.98,-14.6C145,-12.71 151.7,-10.95 158,-10 231.53,1.06 254,2.07 325,-20 328.83,-21.19 332.7,-22.79 336.43,-24.59"/>
 <polygon fill="black" stroke="black" points="334.68,-27.63 345.14,-29.3 338.01,-21.47 334.68,-27.63"/>
 <text xml:space="preserve" text-anchor="middle" x="241.5" y="-7.83" font-family="Times,serif" font-size="14.00">B</text>
 </g>
 <!-- 5&#45;&#45;6 -->
-<g id="edge7" class="edge">
+<g id="edge6" class="edge">
 <title>5&#45;&#45;6</title>
 <path fill="none" stroke="black" d="M262.05,-70.89C279.11,-77.36 304.32,-83.75 325,-76 330.99,-73.75 336.67,-70.13 341.75,-66.06"/>
 <polygon fill="black" stroke="black" points="343.96,-68.77 349.04,-59.48 339.27,-63.57 343.96,-68.77"/>

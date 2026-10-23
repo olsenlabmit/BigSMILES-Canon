@@ -380,12 +380,13 @@ class BigSMILES(SMILES):
         # now deal with the loops
         # get bfs tree from source. this would ensure all loops are cut on chains other than the main desired one
         self.T = nx.bfs_tree(self.G, source, reverse=True).to_undirected()
+        T_edges = {tuple(sorted(e)) for e in self.T.edges()}
 
         self.ringDict = dict()
         self.usedRingID = [False] * 100
         for edge in self.G.edges():
-            if not tuple(edge) in self.T.edges():
-                self.ringDict[edge] = -1
+            if tuple(sorted(edge)) not in T_edges:
+                self.ringDict[tuple(sorted(edge))] = -1
 
         # print(self.ringDict)
         # print(self.T.edges())
@@ -473,12 +474,13 @@ class BigSMILES(SMILES):
         # now deal with the loops
         # get bfs tree from source. this would ensure all loops are cut on chains other than the main desired one
         self.T = nx.bfs_tree(self.G,source,reverse=True).to_undirected()
-        
+        T_edges = {tuple(sorted(e)) for e in self.T.edges()}
+
         self.ringDict = dict()
         self.usedRingID = [False]*100
         for edge in self.G.edges():
-            if not tuple(edge) in self.T.edges():
-                self.ringDict[edge] = -1
+            if tuple(sorted(edge)) not in T_edges:
+                self.ringDict[tuple(sorted(edge))] = -1
         
         #print(self.ringDict)
         #print(self.T.edges())
