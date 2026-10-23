@@ -30,45 +30,45 @@
 <text xml:space="preserve" text-anchor="middle" x="162.5" y="-42" font-family="Times,serif" font-size="14.00">B</text>
 </g>
 <!-- 2 -->
-<g id="node5" class="node">
+<g id="node4" class="node">
 <title>2</title>
 <ellipse fill="none" stroke="black" cx="284.75" cy="-52" rx="18" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="284.75" y="-46.95" font-family="Times,serif" font-size="14.00">2</text>
 </g>
 <!-- 1&#45;&#45;2 -->
-<g id="edge5" class="edge">
+<g id="edge3" class="edge">
 <title>1&#45;&#45;2</title>
 <path fill="none" stroke="black" d="M221.3,-52C231.23,-52 243.94,-52 255.3,-52"/>
 <polygon fill="black" stroke="black" points="254.97,-55.5 264.97,-52 254.97,-48.5 254.97,-55.5"/>
 <text xml:space="preserve" text-anchor="middle" x="243.88" y="-55.2" font-family="Times,serif" font-size="14.00">A</text>
 </g>
-<!-- 4 -->
-<!-- 4&#45;&#45;0 -->
-<g id="edge2" class="edge">
-<title>4&#45;&#45;0</title>
-<path fill="none" stroke="darkgreen" stroke-width="4" d="M54.22,-22C62.28,-22 71.31,-22 79.96,-22"/>
-<polygon fill="darkgreen" stroke="darkgreen" stroke-width="4" points="79.69,-25.5 89.69,-22 79.69,-18.5 79.69,-25.5"/>
-<text xml:space="preserve" text-anchor="start" x="72" y="-25.75" font-family="Times,serif" font-size="14.00">ε</text>
-</g>
 <!-- 3 -->
-<g id="node4" class="node">
+<g id="node3" class="node">
 <title>3</title>
 <ellipse fill="none" stroke="black" cx="366.5" cy="-22" rx="18" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="366.5" y="-16.95" font-family="Times,serif" font-size="14.00">3</text>
 </g>
 <!-- 3&#45;&#45;0 -->
-<g id="edge3" class="edge">
+<g id="edge2" class="edge">
 <title>3&#45;&#45;0</title>
 <path fill="none" stroke="black" d="M348.3,-22C307.63,-22 204.96,-22 151.89,-22"/>
 <polygon fill="black" stroke="black" points="151.96,-18.5 141.96,-22 151.96,-25.5 151.96,-18.5"/>
 <text xml:space="preserve" text-anchor="middle" x="243.88" y="-25.2" font-family="Times,serif" font-size="14.00">A</text>
 </g>
 <!-- 2&#45;&#45;3 -->
-<g id="edge4" class="edge">
+<g id="edge5" class="edge">
 <title>2&#45;&#45;3</title>
 <path fill="none" stroke="black" d="M301.89,-45.93C312.41,-41.97 326.4,-36.71 338.59,-32.12"/>
 <polygon fill="black" stroke="black" points="339.57,-35.49 347.7,-28.7 337.1,-28.94 339.57,-35.49"/>
 <text xml:space="preserve" text-anchor="middle" x="325.62" y="-42" font-family="Times,serif" font-size="14.00">A</text>
+</g>
+<!-- 4 -->
+<!-- 4&#45;&#45;0 -->
+<g id="edge4" class="edge">
+<title>4&#45;&#45;0</title>
+<path fill="none" stroke="darkgreen" stroke-width="4" d="M54.22,-22C62.28,-22 71.31,-22 79.96,-22"/>
+<polygon fill="darkgreen" stroke="darkgreen" stroke-width="4" points="79.69,-25.5 89.69,-22 79.69,-18.5 79.69,-25.5"/>
+<text xml:space="preserve" text-anchor="start" x="72" y="-25.75" font-family="Times,serif" font-size="14.00">ε</text>
 </g>
 </g>
 </svg>

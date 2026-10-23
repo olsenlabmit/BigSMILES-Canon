@@ -28,31 +28,45 @@
 <polygon fill="black" stroke="black" points="93.9,-49 100.62,-40.81 90.26,-43.02 93.9,-49"/>
 <text xml:space="preserve" text-anchor="middle" x="76.88" y="-61.2" font-family="Times,serif" font-size="14.00">B</text>
 </g>
-<!-- 5 -->
-<g id="node3" class="node">
-<title>5</title>
-<ellipse fill="none" stroke="black" cx="199.5" cy="-85" rx="18" ry="18"/>
-<text xml:space="preserve" text-anchor="middle" x="199.5" y="-79.95" font-family="Times,serif" font-size="14.00">5</text>
-</g>
-<!-- 0&#45;&#45;5 -->
-<g id="edge2" class="edge">
-<title>0&#45;&#45;5</title>
-<path fill="none" stroke="black" d="M133.01,-40.65C144.62,-48.51 161.25,-59.78 174.85,-68.98"/>
-<polygon fill="black" stroke="black" points="172.6,-71.69 182.84,-74.4 176.53,-65.89 172.6,-71.69"/>
-<text xml:space="preserve" text-anchor="middle" x="158.62" y="-64.43" font-family="Times,serif" font-size="14.00">A</text>
-</g>
 <!-- 4 -->
-<g id="node4" class="node">
+<g id="node3" class="node">
 <title>4</title>
 <ellipse fill="none" stroke="black" cx="199.5" cy="-22" rx="18" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="199.5" y="-16.95" font-family="Times,serif" font-size="14.00">4</text>
 </g>
 <!-- 0&#45;&#45;4 -->
-<g id="edge5" class="edge">
+<g id="edge3" class="edge">
 <title>0&#45;&#45;4</title>
 <path fill="none" stroke="black" d="M135.74,-26.73C141.43,-25.46 147.83,-24.23 153.75,-23.5 158.92,-22.86 164.46,-22.46 169.81,-22.21"/>
 <polygon fill="black" stroke="black" points="169.61,-25.71 179.5,-21.91 169.4,-18.72 169.61,-25.71"/>
 <text xml:space="preserve" text-anchor="middle" x="158.62" y="-26.7" font-family="Times,serif" font-size="14.00">A</text>
+</g>
+<!-- 5 -->
+<g id="node5" class="node">
+<title>5</title>
+<ellipse fill="none" stroke="black" cx="199.5" cy="-85" rx="18" ry="18"/>
+<text xml:space="preserve" text-anchor="middle" x="199.5" y="-79.95" font-family="Times,serif" font-size="14.00">5</text>
+</g>
+<!-- 0&#45;&#45;5 -->
+<g id="edge5" class="edge">
+<title>0&#45;&#45;5</title>
+<path fill="none" stroke="black" d="M133.01,-40.65C144.62,-48.51 161.25,-59.78 174.85,-68.98"/>
+<polygon fill="black" stroke="black" points="172.6,-71.69 182.84,-74.4 176.53,-65.89 172.6,-71.69"/>
+<text xml:space="preserve" text-anchor="middle" x="158.62" y="-64.43" font-family="Times,serif" font-size="14.00">A</text>
+</g>
+<!-- 2 -->
+<g id="node4" class="node">
+<title>2</title>
+<ellipse fill="red" stroke="red" cx="284.5" cy="-22" rx="18" ry="18"/>
+<ellipse fill="none" stroke="red" cx="284.5" cy="-22" rx="22" ry="22"/>
+<text xml:space="preserve" text-anchor="middle" x="284.5" y="-16.95" font-family="Times,serif" font-size="14.00">2</text>
+</g>
+<!-- 4&#45;&#45;2 -->
+<g id="edge2" class="edge">
+<title>4&#45;&#45;2</title>
+<path fill="none" stroke="black" d="M217.7,-22C227.28,-22 239.54,-22 250.87,-22"/>
+<polygon fill="black" stroke="black" points="250.68,-25.5 260.68,-22 250.68,-18.5 250.68,-25.5"/>
+<text xml:space="preserve" text-anchor="middle" x="240" y="-25.2" font-family="Times,serif" font-size="14.00">C</text>
 </g>
 <!-- 5&#45;&#45;3 -->
 <g id="edge4" class="edge">
@@ -60,20 +74,6 @@
 <path fill="none" stroke="black" d="M181.17,-85C151.9,-85 92.41,-85 56.8,-85"/>
 <polygon fill="black" stroke="black" points="56.8,-81.5 46.8,-85 56.8,-88.5 56.8,-81.5"/>
 <text xml:space="preserve" text-anchor="middle" x="117.75" y="-88.2" font-family="Times,serif" font-size="14.00">B</text>
-</g>
-<!-- 2 -->
-<g id="node5" class="node">
-<title>2</title>
-<ellipse fill="red" stroke="red" cx="284.5" cy="-22" rx="18" ry="18"/>
-<ellipse fill="none" stroke="red" cx="284.5" cy="-22" rx="22" ry="22"/>
-<text xml:space="preserve" text-anchor="middle" x="284.5" y="-16.95" font-family="Times,serif" font-size="14.00">2</text>
-</g>
-<!-- 4&#45;&#45;2 -->
-<g id="edge3" class="edge">
-<title>4&#45;&#45;2</title>
-<path fill="none" stroke="black" d="M217.7,-22C227.28,-22 239.54,-22 250.87,-22"/>
-<polygon fill="black" stroke="black" points="250.68,-25.5 260.68,-22 250.68,-18.5 250.68,-25.5"/>
-<text xml:space="preserve" text-anchor="middle" x="240" y="-25.2" font-family="Times,serif" font-size="14.00">C</text>
 </g>
 <!-- 6 -->
 <!-- 6&#45;&#45;0 -->
